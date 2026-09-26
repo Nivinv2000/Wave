@@ -1,0 +1,832 @@
+{
+  "schemaVersion": 1,
+  "simulatorVersion": "0.2.0",
+  "split": "development",
+  "manifest": {
+    "schemaVersion": 1,
+    "name": "All-weather comparison — freeze before model tuning",
+    "seeds": {
+      "development": [
+        17,
+        18,
+        19
+      ],
+      "heldout": [
+        401,
+        509,
+        617
+      ]
+    },
+    "controllers": [
+      {
+        "id": "reactive",
+        "kind": "reactive"
+      },
+      {
+        "id": "predictive",
+        "kind": "predictive"
+      }
+    ],
+    "scenarios": [
+      {
+        "id": "light",
+        "config": {
+          "preset": "light",
+          "duration": 40
+        }
+      },
+      {
+        "id": "medium",
+        "config": {
+          "preset": "medium",
+          "duration": 40
+        }
+      },
+      {
+        "id": "extreme",
+        "config": {
+          "preset": "extreme",
+          "duration": 40
+        }
+      },
+      {
+        "id": "swell",
+        "config": {
+          "preset": "swell",
+          "duration": 40
+        }
+      },
+      {
+        "id": "spring",
+        "config": {
+          "preset": "spring",
+          "duration": 40
+        }
+      },
+      {
+        "id": "rogue",
+        "config": {
+          "preset": "rogue",
+          "duration": 40
+        }
+      },
+      {
+        "id": "delayed-gps-outage",
+        "config": {
+          "preset": "light",
+          "duration": 40,
+          "commandLatencyMs": 200,
+          "faults": [
+            {
+              "target": "gps",
+              "start": 4,
+              "end": 9
+            }
+          ]
+        }
+      },
+      {
+        "id": "tracker-outage",
+        "config": {
+          "preset": "light",
+          "duration": 40,
+          "faults": [
+            {
+              "target": "deck",
+              "start": 5,
+              "end": 8
+            }
+          ]
+        }
+      },
+      {
+        "id": "command-outage",
+        "config": {
+          "preset": "light",
+          "duration": 40,
+          "faults": [
+            {
+              "target": "link",
+              "start": 5,
+              "end": 8
+            }
+          ]
+        }
+      },
+      {
+        "id": "motor-degradation",
+        "config": {
+          "preset": "light",
+          "duration": 40,
+          "faults": [
+            {
+              "target": "motor",
+              "motor": 0,
+              "factor": 0.65,
+              "start": 5,
+              "end": 40
+            }
+          ]
+        }
+      }
+    ],
+    "gates": {}
+  },
+  "results": [
+    {
+      "scenario": "light",
+      "seed": 17,
+      "controller": "reactive",
+      "status": "landed",
+      "time": 14.370000000000847,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.5020087328575907,
+      "relativeTangentialSpeed": 0.1284391315024871,
+      "padError": 0.09720223171333031,
+      "relativeTiltDeg": 2.3322659107021875
+    },
+    {
+      "scenario": "light",
+      "seed": 17,
+      "controller": "predictive",
+      "status": "landed",
+      "time": 13.4350000000007,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.25750364111268936,
+      "relativeTangentialSpeed": 0.3068835674458557,
+      "padError": 0.05558169187269766,
+      "relativeTiltDeg": 1.9344893427952605
+    },
+    {
+      "scenario": "light",
+      "seed": 18,
+      "controller": "reactive",
+      "status": "landed",
+      "time": 15.195000000000976,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.27765611570719634,
+      "relativeTangentialSpeed": 0.10581875499121932,
+      "padError": 0.29662059733350793,
+      "relativeTiltDeg": 2.4819515533292136
+    },
+    {
+      "scenario": "light",
+      "seed": 18,
+      "controller": "predictive",
+      "status": "landed",
+      "time": 15.60500000000104,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.2871222603831909,
+      "relativeTangentialSpeed": 0.17022328013693885,
+      "padError": 0.26392596518358663,
+      "relativeTiltDeg": 2.0146787265387083
+    },
+    {
+      "scenario": "light",
+      "seed": 19,
+      "controller": "reactive",
+      "status": "landed",
+      "time": 14.595000000000882,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.6196474895339127,
+      "relativeTangentialSpeed": 0.3083467773337041,
+      "padError": 0.28896318955977546,
+      "relativeTiltDeg": 3.584479347641981
+    },
+    {
+      "scenario": "light",
+      "seed": 19,
+      "controller": "predictive",
+      "status": "landed",
+      "time": 14.19500000000082,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.4171405627482279,
+      "relativeTangentialSpeed": 0.4492226316244511,
+      "padError": 0.1377605035093744,
+      "relativeTiltDeg": 1.0189805664605796
+    },
+    {
+      "scenario": "medium",
+      "seed": 17,
+      "controller": "reactive",
+      "status": "hard-contact",
+      "time": 14.620000000000886,
+      "reason": "Touchdown outside configured envelope",
+      "relativeNormalSpeed": 0.8766370259209226,
+      "relativeTangentialSpeed": 0.26672153060209086,
+      "padError": 0.2888839436209106,
+      "relativeTiltDeg": 5.554036750373561
+    },
+    {
+      "scenario": "medium",
+      "seed": 17,
+      "controller": "predictive",
+      "status": "landed",
+      "time": 13.260000000000673,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.3326463083525384,
+      "relativeTangentialSpeed": 0.40936690417347,
+      "padError": 0.31611801927774,
+      "relativeTiltDeg": 5.27744729747437
+    },
+    {
+      "scenario": "medium",
+      "seed": 18,
+      "controller": "reactive",
+      "status": "hard-contact",
+      "time": 17.655000000000772,
+      "reason": "Touchdown outside configured envelope",
+      "relativeNormalSpeed": 0.8229642575677466,
+      "relativeTangentialSpeed": 0.3081772294205948,
+      "padError": 0.24445950678286435,
+      "relativeTiltDeg": 3.7507629720478675
+    },
+    {
+      "scenario": "medium",
+      "seed": 18,
+      "controller": "predictive",
+      "status": "landed",
+      "time": 16.650000000000972,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.45345527844387096,
+      "relativeTangentialSpeed": 0.24800117452700354,
+      "padError": 0.3036478780118869,
+      "relativeTiltDeg": 4.459295670803257
+    },
+    {
+      "scenario": "medium",
+      "seed": 19,
+      "controller": "reactive",
+      "status": "landed",
+      "time": 15.330000000000997,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.4007539177296831,
+      "relativeTangentialSpeed": 0.531302084876961,
+      "padError": 0.1194985675382613,
+      "relativeTiltDeg": 2.3185127384113926
+    },
+    {
+      "scenario": "medium",
+      "seed": 19,
+      "controller": "predictive",
+      "status": "landed",
+      "time": 15.22000000000098,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.10730199216336465,
+      "relativeTangentialSpeed": 0.42679056518328573,
+      "padError": 0.16113831564115733,
+      "relativeTiltDeg": 3.6077588680301673
+    },
+    {
+      "scenario": "extreme",
+      "seed": 17,
+      "controller": "reactive",
+      "status": "timeout",
+      "time": 40.00000000000201,
+      "reason": "No landing before episode deadline"
+    },
+    {
+      "scenario": "extreme",
+      "seed": 17,
+      "controller": "predictive",
+      "status": "timeout",
+      "time": 40.00000000000201,
+      "reason": "No landing before episode deadline"
+    },
+    {
+      "scenario": "extreme",
+      "seed": 18,
+      "controller": "reactive",
+      "status": "timeout",
+      "time": 40.00000000000201,
+      "reason": "No landing before episode deadline"
+    },
+    {
+      "scenario": "extreme",
+      "seed": 18,
+      "controller": "predictive",
+      "status": "timeout",
+      "time": 40.00000000000201,
+      "reason": "No landing before episode deadline"
+    },
+    {
+      "scenario": "extreme",
+      "seed": 19,
+      "controller": "reactive",
+      "status": "timeout",
+      "time": 40.00000000000201,
+      "reason": "No landing before episode deadline"
+    },
+    {
+      "scenario": "extreme",
+      "seed": 19,
+      "controller": "predictive",
+      "status": "timeout",
+      "time": 40.00000000000201,
+      "reason": "No landing before episode deadline"
+    },
+    {
+      "scenario": "swell",
+      "seed": 17,
+      "controller": "reactive",
+      "status": "landed",
+      "time": 13.760000000000751,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.5719875650034812,
+      "relativeTangentialSpeed": 0.1981564015425132,
+      "padError": 0.12539866428609445,
+      "relativeTiltDeg": 3.9289259971650035
+    },
+    {
+      "scenario": "swell",
+      "seed": 17,
+      "controller": "predictive",
+      "status": "landed",
+      "time": 14.155000000000813,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.24677102670614504,
+      "relativeTangentialSpeed": 0.05560483529936688,
+      "padError": 0.15323536197230633,
+      "relativeTiltDeg": 4.299156436579328
+    },
+    {
+      "scenario": "swell",
+      "seed": 18,
+      "controller": "reactive",
+      "status": "hard-contact",
+      "time": 15.575000000001035,
+      "reason": "Touchdown outside configured envelope",
+      "relativeNormalSpeed": 0.9895159490054571,
+      "relativeTangentialSpeed": 0.16863283633724652,
+      "padError": 0.23592187154813046,
+      "relativeTiltDeg": 1.531182870620382
+    },
+    {
+      "scenario": "swell",
+      "seed": 18,
+      "controller": "predictive",
+      "status": "landed",
+      "time": 14.565000000000877,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.16390114549859594,
+      "relativeTangentialSpeed": 0.3180491651897969,
+      "padError": 0.2966429308007518,
+      "relativeTiltDeg": 2.687046357377267
+    },
+    {
+      "scenario": "swell",
+      "seed": 19,
+      "controller": "reactive",
+      "status": "landed",
+      "time": 16.25000000000105,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.5240939208588521,
+      "relativeTangentialSpeed": 0.1748644748096005,
+      "padError": 0.16801113598546333,
+      "relativeTiltDeg": 5.529483143259995
+    },
+    {
+      "scenario": "swell",
+      "seed": 19,
+      "controller": "predictive",
+      "status": "landed",
+      "time": 14.675000000000894,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.32389607511539875,
+      "relativeTangentialSpeed": 0.22616825883433928,
+      "padError": 0.2943554484681998,
+      "relativeTiltDeg": 4.963597435521702
+    },
+    {
+      "scenario": "spring",
+      "seed": 17,
+      "controller": "reactive",
+      "status": "landed",
+      "time": 15.085000000000958,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.6254348336573695,
+      "relativeTangentialSpeed": 0.2674590291815422,
+      "padError": 0.18697018294181822,
+      "relativeTiltDeg": 0.7845137350959508
+    },
+    {
+      "scenario": "spring",
+      "seed": 17,
+      "controller": "predictive",
+      "status": "landed",
+      "time": 13.275000000000675,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.27412522460222394,
+      "relativeTangentialSpeed": 0.38648814957377803,
+      "padError": 0.2363570664922884,
+      "relativeTiltDeg": 4.830218543174218
+    },
+    {
+      "scenario": "spring",
+      "seed": 18,
+      "controller": "reactive",
+      "status": "landed",
+      "time": 15.54000000000103,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.6430156197595983,
+      "relativeTangentialSpeed": 0.16367998048771834,
+      "padError": 0.1675324471635974,
+      "relativeTiltDeg": 1.1833906459867094
+    },
+    {
+      "scenario": "spring",
+      "seed": 18,
+      "controller": "predictive",
+      "status": "landed",
+      "time": 14.810000000000915,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.12157739378677568,
+      "relativeTangentialSpeed": 0.727974952809259,
+      "padError": 0.4418896046189262,
+      "relativeTiltDeg": 2.9645107386380833
+    },
+    {
+      "scenario": "spring",
+      "seed": 19,
+      "controller": "reactive",
+      "status": "landed",
+      "time": 15.270000000000987,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.44399864369876985,
+      "relativeTangentialSpeed": 0.479285567597613,
+      "padError": 0.21618101916695576,
+      "relativeTiltDeg": 3.3193618682021686
+    },
+    {
+      "scenario": "spring",
+      "seed": 19,
+      "controller": "predictive",
+      "status": "landed",
+      "time": 14.365000000000846,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.42053692812087407,
+      "relativeTangentialSpeed": 0.5446095960029793,
+      "padError": 0.14809996253071092,
+      "relativeTiltDeg": 1.53420146152882
+    },
+    {
+      "scenario": "rogue",
+      "seed": 17,
+      "controller": "reactive",
+      "status": "timeout",
+      "time": 40.00000000000201,
+      "reason": "No landing before episode deadline"
+    },
+    {
+      "scenario": "rogue",
+      "seed": 17,
+      "controller": "predictive",
+      "status": "timeout",
+      "time": 40.00000000000201,
+      "reason": "No landing before episode deadline"
+    },
+    {
+      "scenario": "rogue",
+      "seed": 18,
+      "controller": "reactive",
+      "status": "timeout",
+      "time": 40.00000000000201,
+      "reason": "No landing before episode deadline"
+    },
+    {
+      "scenario": "rogue",
+      "seed": 18,
+      "controller": "predictive",
+      "status": "timeout",
+      "time": 40.00000000000201,
+      "reason": "No landing before episode deadline"
+    },
+    {
+      "scenario": "rogue",
+      "seed": 19,
+      "controller": "reactive",
+      "status": "hard-contact",
+      "time": 19.37000000000043,
+      "reason": "Touchdown outside configured envelope",
+      "relativeNormalSpeed": 1.0382399797432513,
+      "relativeTangentialSpeed": 0.4413609555182188,
+      "padError": 0.8870217669654066,
+      "relativeTiltDeg": 17.37715199521551
+    },
+    {
+      "scenario": "rogue",
+      "seed": 19,
+      "controller": "predictive",
+      "status": "timeout",
+      "time": 40.00000000000201,
+      "reason": "No landing before episode deadline"
+    },
+    {
+      "scenario": "delayed-gps-outage",
+      "seed": 17,
+      "controller": "reactive",
+      "status": "landed",
+      "time": 11.585000000000411,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.4133888206890693,
+      "relativeTangentialSpeed": 0.2722774045280511,
+      "padError": 0.22042623582967164,
+      "relativeTiltDeg": 2.514238073086203
+    },
+    {
+      "scenario": "delayed-gps-outage",
+      "seed": 17,
+      "controller": "predictive",
+      "status": "landed",
+      "time": 11.64000000000042,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.24047841250270258,
+      "relativeTangentialSpeed": 0.31726305111415076,
+      "padError": 0.22064864104652757,
+      "relativeTiltDeg": 2.5930685783839302
+    },
+    {
+      "scenario": "delayed-gps-outage",
+      "seed": 18,
+      "controller": "reactive",
+      "status": "landed",
+      "time": 14.155000000000813,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.32888225431631324,
+      "relativeTangentialSpeed": 0.02585114820993863,
+      "padError": 0.339368348038307,
+      "relativeTiltDeg": 4.1193225962490985
+    },
+    {
+      "scenario": "delayed-gps-outage",
+      "seed": 18,
+      "controller": "predictive",
+      "status": "landed",
+      "time": 15.390000000001006,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.3004503847117145,
+      "relativeTangentialSpeed": 0.11931292664322576,
+      "padError": 0.2913863177307287,
+      "relativeTiltDeg": 0.9798339887576744
+    },
+    {
+      "scenario": "delayed-gps-outage",
+      "seed": 19,
+      "controller": "reactive",
+      "status": "landed",
+      "time": 15.365000000001002,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.3242641627434719,
+      "relativeTangentialSpeed": 0.3016794646091089,
+      "padError": 0.33000751944205536,
+      "relativeTiltDeg": 3.3773464790596663
+    },
+    {
+      "scenario": "delayed-gps-outage",
+      "seed": 19,
+      "controller": "predictive",
+      "status": "landed",
+      "time": 15.045000000000952,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.14588443489734848,
+      "relativeTangentialSpeed": 0.15018787770653094,
+      "padError": 0.3708498966897491,
+      "relativeTiltDeg": 3.7458496938275205
+    },
+    {
+      "scenario": "tracker-outage",
+      "seed": 17,
+      "controller": "reactive",
+      "status": "landed",
+      "time": 19.660000000000373,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.32470355863588063,
+      "relativeTangentialSpeed": 0.3639200951187775,
+      "padError": 0.061013160167546245,
+      "relativeTiltDeg": 0.6664450688717675
+    },
+    {
+      "scenario": "tracker-outage",
+      "seed": 17,
+      "controller": "predictive",
+      "status": "landed",
+      "time": 20.265000000000253,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.35800503088340496,
+      "relativeTangentialSpeed": 0.06682364149449177,
+      "padError": 0.10536749346744853,
+      "relativeTiltDeg": 5.5491827396171765
+    },
+    {
+      "scenario": "tracker-outage",
+      "seed": 18,
+      "controller": "reactive",
+      "status": "landed",
+      "time": 19.410000000000423,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.32170715026487556,
+      "relativeTangentialSpeed": 0.19541690941149914,
+      "padError": 0.3718625813412276,
+      "relativeTiltDeg": 3.539639905604137
+    },
+    {
+      "scenario": "tracker-outage",
+      "seed": 18,
+      "controller": "predictive",
+      "status": "landed",
+      "time": 20.84000000000014,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.21196263099042478,
+      "relativeTangentialSpeed": 0.2207764454290271,
+      "padError": 0.44234258211392996,
+      "relativeTiltDeg": 2.5718343927179173
+    },
+    {
+      "scenario": "tracker-outage",
+      "seed": 19,
+      "controller": "reactive",
+      "status": "landed",
+      "time": 19.185000000000468,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.45945751824403275,
+      "relativeTangentialSpeed": 0.25610943922005763,
+      "padError": 0.12359956790367956,
+      "relativeTiltDeg": 3.5505374163330714
+    },
+    {
+      "scenario": "tracker-outage",
+      "seed": 19,
+      "controller": "predictive",
+      "status": "landed",
+      "time": 20.73000000000016,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.2777308561423121,
+      "relativeTangentialSpeed": 0.1997556215150334,
+      "padError": 0.21440272588530254,
+      "relativeTiltDeg": 1.0647874463926104
+    },
+    {
+      "scenario": "command-outage",
+      "seed": 17,
+      "controller": "reactive",
+      "status": "landed",
+      "time": 17.92000000000072,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.36625070536583576,
+      "relativeTangentialSpeed": 0.16399664110299744,
+      "padError": 0.02639171964656514,
+      "relativeTiltDeg": 4.618577343493266
+    },
+    {
+      "scenario": "command-outage",
+      "seed": 17,
+      "controller": "predictive",
+      "status": "landed",
+      "time": 18.32500000000064,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.28317531377940697,
+      "relativeTangentialSpeed": 0.31500886190290545,
+      "padError": 0.12523137142519328,
+      "relativeTiltDeg": 0.7130242019046099
+    },
+    {
+      "scenario": "command-outage",
+      "seed": 18,
+      "controller": "reactive",
+      "status": "landed",
+      "time": 18.280000000000648,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.5178021631572343,
+      "relativeTangentialSpeed": 0.27084380367377237,
+      "padError": 0.18874483243242088,
+      "relativeTiltDeg": 1.7909079726355133
+    },
+    {
+      "scenario": "command-outage",
+      "seed": 18,
+      "controller": "predictive",
+      "status": "landed",
+      "time": 18.41500000000062,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.17168677841176624,
+      "relativeTangentialSpeed": 0.3221466775840654,
+      "padError": 0.18689895112437374,
+      "relativeTiltDeg": 1.2172298349164263
+    },
+    {
+      "scenario": "command-outage",
+      "seed": 19,
+      "controller": "reactive",
+      "status": "landed",
+      "time": 16.945000000000913,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.2890152728812341,
+      "relativeTangentialSpeed": 0.38502598904567725,
+      "padError": 0.08325811963994538,
+      "relativeTiltDeg": 1.9650087104737448
+    },
+    {
+      "scenario": "command-outage",
+      "seed": 19,
+      "controller": "predictive",
+      "status": "landed",
+      "time": 16.55500000000099,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.22336858368633056,
+      "relativeTangentialSpeed": 0.1567046856846956,
+      "padError": 0.1519262440533571,
+      "relativeTiltDeg": 3.6923634258135816
+    },
+    {
+      "scenario": "motor-degradation",
+      "seed": 17,
+      "controller": "reactive",
+      "status": "water-impact",
+      "time": 6.624999999999881,
+      "reason": "Aircraft reached the water surface"
+    },
+    {
+      "scenario": "motor-degradation",
+      "seed": 17,
+      "controller": "predictive",
+      "status": "hard-contact",
+      "time": 6.309999999999888,
+      "reason": "Touchdown outside configured envelope",
+      "relativeNormalSpeed": 6.588193207484656,
+      "relativeTangentialSpeed": 5.387053158736177,
+      "padError": 3.941561665327578,
+      "relativeTiltDeg": 63.15928075113327
+    },
+    {
+      "scenario": "motor-degradation",
+      "seed": 18,
+      "controller": "reactive",
+      "status": "water-impact",
+      "time": 6.68499999999988,
+      "reason": "Aircraft reached the water surface"
+    },
+    {
+      "scenario": "motor-degradation",
+      "seed": 18,
+      "controller": "predictive",
+      "status": "water-impact",
+      "time": 6.644999999999881,
+      "reason": "Aircraft reached the water surface"
+    },
+    {
+      "scenario": "motor-degradation",
+      "seed": 19,
+      "controller": "reactive",
+      "status": "water-impact",
+      "time": 6.594999999999882,
+      "reason": "Aircraft reached the water surface"
+    },
+    {
+      "scenario": "motor-degradation",
+      "seed": 19,
+      "controller": "predictive",
+      "status": "hard-contact",
+      "time": 6.254999999999889,
+      "reason": "Touchdown outside configured envelope",
+      "relativeNormalSpeed": 6.616574888266904,
+      "relativeTangentialSpeed": 5.060567748195045,
+      "padError": 3.7049581642963467,
+      "relativeTiltDeg": 73.40713820106926
+    }
+  ],
+  "summaries": {
+    "reactive": {
+      "attempts": 30,
+      "landings": 18,
+      "landingRate": 0.6,
+      "impacts": 7,
+      "timeouts": 5,
+      "errors": 0,
+      "outcomes": {
+        "landed": 18,
+        "hard-contact": 4,
+        "timeout": 5,
+        "water-impact": 3
+      },
+      "meanContactSpeed": 0.5309738935155355
+    },
+    "predictive": {
+      "attempts": 30,
+      "landings": 21,
+      "landingRate": 0.7,
+      "impacts": 3,
+      "timeouts": 6,
+      "errors": 0,
+      "outcomes": {
+        "landed": 21,
+        "timeout": 6,
+        "hard-contact": 2,
+        "water-impact": 1
+      },
+      "meanContactSpeed": 0.8184125373387332
+    }
+  },
+  "gates": {},
+  "passed": true,
+  "modelHashes": {}
+}

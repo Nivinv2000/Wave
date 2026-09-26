@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "name": "All-weather comparison — freeze before model tuning",
+  "seeds": { "development": [17, 18, 19], "heldout": [401, 509, 617] },
+  "controllers": [
+    { "id": "reactive", "kind": "reactive" },
+    { "id": "predictive", "kind": "predictive" }
+  ],
+  "scenarios": [
+    { "id": "light", "config": { "preset": "light", "duration": 40 } },
+    { "id": "medium", "config": { "preset": "medium", "duration": 40 } },
+    { "id": "extreme", "config": { "preset": "extreme", "duration": 40 } },
+    { "id": "swell", "config": { "preset": "swell", "duration": 40 } },
+    { "id": "spring", "config": { "preset": "spring", "duration": 40 } },
+    { "id": "rogue", "config": { "preset": "rogue", "duration": 40 } },
+    {
+      "id": "delayed-gps-outage",
+      "config": {
+        "preset": "light",
+        "duration": 40,
+        "commandLatencyMs": 200,
+        "faults": [{ "target": "gps", "start": 4, "end": 9 }]
+      }
+    },
+    {
+      "id": "tracker-outage",
+      "config": {
+        "preset": "light",
+        "duration": 40,
+        "faults": [{ "target": "deck", "start": 5, "end": 8 }]
+      }
+    },
+    {
+      "id": "command-outage",
+      "config": {
+        "preset": "light",
+        "duration": 40,
+        "faults": [{ "target": "link", "start": 5, "end": 8 }]
+      }
+    },
+    {
+      "id": "motor-degradation",
+      "config": {
+        "preset": "light",
+        "duration": 40,
+        "faults": [
+          {
+            "target": "motor",
+            "motor": 0,
+            "factor": 0.65,
+            "start": 5,
+            "end": 40
+          }
+        ]
+      }
+    }
+  ],
+  "gates": {}
+}

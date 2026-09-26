@@ -636,3 +636,55 @@ code {
   background: #0a26388c;
   border-radius: 3px;
 }
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+}
+.file-action {
+  margin: 0;
+  flex: 1;
+  min-width: 140px;
+}
+.file-action input {
+  margin-top: 4px;
+}
+.axis-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.axis-grid span {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+}
+.axis-grid strong {
+  font-size: 16px;
+  font-weight: 500;
+}
+.table-scroll {
+  overflow-x: auto;
+}
+.comparison-table {
+  width: 100%;
+  font-size: 11px;
+  border-collapse: collapse;
+}
+.comparison-table td,
+.comparison-table th {
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+#replay-time-label {
+  float: right;
+  color: var(--cyan);
+}
+.comparison-table button {
+  padding: 5px 7px;
+  font-size: 10px;
+}

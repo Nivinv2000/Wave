@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "simulatorVersion": "0.2.0",
+  "source": "Ocean Flight Lab; local reduced-order research simulator, not PX4/Gazebo",
+  "preset": "medium",
+  "duration": 40,
+  "seeds": [
+    17,
+    18,
+    19
+  ],
+  "scenario": {
+    "hs": 1.3,
+    "tp": 6.5,
+    "wind": 7,
+    "gust": 2,
+    "rain": 0.15
+  },
+  "counts": {
+    "reactive": {
+      "landings": 1,
+      "attempts": 3
+    },
+    "predictive": {
+      "landings": 3,
+      "attempts": 3
+    }
+  },
+  "results": [
+    {
+      "seed": 17,
+      "controller": "reactive",
+      "file": "reactive-seed17.json",
+      "status": "hard-contact",
+      "time": 14.620000000000886,
+      "reason": "Touchdown outside configured envelope",
+      "relativeNormalSpeed": 0.8766370259209226,
+      "relativeTangentialSpeed": 0.26672153060209086,
+      "padError": 0.2888839436209106,
+      "relativeTiltDeg": 5.554036750373561
+    },
+    {
+      "seed": 17,
+      "controller": "predictive",
+      "file": "predictive-seed17.json",
+      "status": "landed",
+      "time": 13.260000000000673,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.3326463083525384,
+      "relativeTangentialSpeed": 0.40936690417347,
+      "padError": 0.31611801927774,
+      "relativeTiltDeg": 5.27744729747437
+    },
+    {
+      "seed": 18,
+      "controller": "reactive",
+      "file": "reactive-seed18.json",
+      "status": "hard-contact",
+      "time": 17.655000000000772,
+      "reason": "Touchdown outside configured envelope",
+      "relativeNormalSpeed": 0.8229642575677466,
+      "relativeTangentialSpeed": 0.3081772294205948,
+      "padError": 0.24445950678286435,
+      "relativeTiltDeg": 3.7507629720478675
+    },
+    {
+      "seed": 18,
+      "controller": "predictive",
+      "file": "predictive-seed18.json",
+      "status": "landed",
+      "time": 16.650000000000972,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.45345527844387096,
+      "relativeTangentialSpeed": 0.24800117452700354,
+      "padError": 0.3036478780118869,
+      "relativeTiltDeg": 4.459295670803257
+    },
+    {
+      "seed": 19,
+      "controller": "reactive",
+      "file": "reactive-seed19.json",
+      "status": "landed",
+      "time": 15.330000000000997,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.4007539177296831,
+      "relativeTangentialSpeed": 0.531302084876961,
+      "padError": 0.1194985675382613,
+      "relativeTiltDeg": 2.3185127384113926
+    },
+    {
+      "seed": 19,
+      "controller": "predictive",
+      "file": "predictive-seed19.json",
+      "status": "landed",
+      "time": 15.22000000000098,
+      "reason": "Touchdown inside configured envelope",
+      "relativeNormalSpeed": 0.10730199216336465,
+      "relativeTangentialSpeed": 0.42679056518328573,
+      "padError": 0.16113831564115733,
+      "relativeTiltDeg": 3.6077588680301673
+    }
+  ]
+}

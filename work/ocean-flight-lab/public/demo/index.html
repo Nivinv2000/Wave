@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Deck landing: matched flight demo</title>
+    <link rel="stylesheet" href="/demo/demo.css" />
+    <script type="importmap">{"imports":{"three":"/vendor/three.module.js"}}</script>
+  </head>
+  <body>
+    <header>
+      <div><p class="eyebrow">OCEAN FLIGHT LAB · MATCHED FLIGHTS</p><h1>The same sea. Two landing decisions.</h1><p>Two controllers approach the same moving deck under wind and waves.</p></div>
+      <a href="/">Full simulator ↗</a>
+    </header>
+    <main>
+      <section class="controls">
+        <label for="seed">Wave seed</label><select id="seed"><option>17</option><option>18</option><option>19</option></select>
+        <button id="play">▶ Play both flights</button><button id="restart">↺ Restart</button>
+        <label for="speed">Speed</label><select id="speed"><option value="1">1×</option><option value="2" selected>2×</option><option value="4">4×</option></select>
+        <span class="clock"><strong id="time">0.0</strong> s</span>
+      </section>
+      <div class="scenes">
+        <section class="flight">
+          <div class="flight-title"><div><span class="eyebrow">BASELINE</span><h2>Reactive</h2></div><strong id="reactive-result">READY</strong></div>
+          <div id="reactive-world" class="world"></div>
+          <div class="flight-foot"><span id="reactive-decision">Current deck measurements</span><span id="reactive-metric">—</span></div>
+        </section>
+        <section class="flight">
+          <div class="flight-title"><div><span class="eyebrow">PROPOSED</span><h2>Predictive</h2></div><strong id="predictive-result">READY</strong></div>
+          <div id="predictive-world" class="world"></div>
+          <div class="flight-foot"><span id="predictive-decision">Measured motion + short forecast</span><span id="predictive-metric">—</span></div>
+        </section>
+      </div>
+      <section class="evidence">
+        <div><span class="eyebrow">SAME THREE WAVE SEEDS · 17, 18, 19</span><h2 id="summary">Loading evidence…</h2><p id="conditions"></p></div>
+        <a href="/demo/data/comparison.json" download="comparison.json">Download all six outcomes ↓</a>
+      </section>
+      <p class="disclosure">Recorded runs from our local reduced-order simulator. This is a controller decision demonstration; it is not PX4/Gazebo or a vessel-calibrated flight result. Both policies use the same aircraft, seed, scenario, sensors and landing rules.</p>
+    </main>
+    <script type="module" src="/demo/demo.mjs"></script>
+  </body>
+</html>

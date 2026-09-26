@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { makeConfig } from "./core/environment.mjs";
 import { OrbitControls } from "./vendor/OrbitControls.js";
 export class WorldView {
   constructor(container) {
@@ -117,9 +118,12 @@ export class WorldView {
     parent.add(mesh);
     return mesh;
   }
-  buildShip() {
+  buildShip(c = makeConfig()) {
     this.ship = new THREE.Group();
     this.scene.add(this.ship);
+    const body = new THREE.Group();
+    body.scale.set(c.shipLength / 16, c.shipBeam / 5.8, c.freeboard / 2);
+    this.ship.add(body);
     const shape = new THREE.Shape();
     shape.moveTo(-8, -2.9);
     shape.lineTo(5.8, -2.9);
@@ -139,40 +143,50 @@ export class WorldView {
       new THREE.MeshStandardMaterial({ color: "#344c59", roughness: 0.55 }),
     );
     hull.position.z = -2.4;
-    this.ship.add(hull);
-    this.box(this.ship, [13.8, 5.65, 0.12], [-0.8, 0, -0.02], "#9da9a9");
-    this.box(this.ship, [3.8, 3.6, 2.4], [4.45, 0, 1.2], "#dce6e1");
-    this.box(this.ship, [3.95, 3.8, 0.15], [4.45, 0, 2.45], "#a3baba");
-    this.box(this.ship, [2.8, 0.035, 0.7], [4.3, -1.815, 1.65], "#153c52", 0.2);
-    this.box(this.ship, [0.035, 2.3, 0.7], [6.36, 0, 1.65], "#153c52", 0.2);
+    body.add(hull);
+    this.box(body, [13.8, 5.65, 0.12], [-0.8, 0, -0.02], "#9da9a9");
+    this.box(body, [3.8, 3.6, 2.4], [4.45, 0, 1.2], "#dce6e1");
+    this.box(body, [3.95, 3.8, 0.15], [4.45, 0, 2.45], "#a3baba");
+    this.box(body, [2.8, 0.035, 0.7], [4.3, -1.815, 1.65], "#153c52", 0.2);
+    this.box(body, [0.035, 2.3, 0.7], [6.36, 0, 1.65], "#153c52", 0.2);
     const mast = new THREE.Mesh(
       new THREE.CylinderGeometry(0.04, 0.06, 3, 8),
       new THREE.MeshStandardMaterial({ color: "#d0dedc" }),
     );
     mast.rotation.x = Math.PI / 2;
     mast.position.set(4.6, 0, 3.85);
-    this.ship.add(mast);
-    this.box(this.ship, [1.4, 0.12, 0.1], [4.6, 0, 4.8], "#b6cecb");
+    body.add(mast);
+    this.box(body, [1.4, 0.12, 0.1], [4.6, 0, 4.8], "#b6cecb");
     for (const y of [-2.7, 2.7]) {
-      this.box(this.ship, [14, 0.035, 0.035], [-0.7, y, 0.6], "#d7e5e4");
+      this.box(body, [14, 0.035, 0.035], [-0.7, y, 0.6], "#d7e5e4");
       for (let x = -7.5; x < 6.5; x += 2)
-        this.box(this.ship, [0.035, 0.035, 0.6], [x, y, 0.3], "#a6bdbf");
+        this.box(body, [0.035, 0.035, 0.6], [x, y, 0.3], "#a6bdbf");
     }
     const disk = new THREE.Mesh(
-      new THREE.CircleGeometry(1.8, 64),
+      new THREE.CircleGeometry(c.padRadius, 64),
       new THREE.MeshStandardMaterial({ color: "#244645", roughness: 0.9 }),
     );
-    disk.position.set(-3.2, 0, 0.09);
+    disk.position.set(c.padOffset[0], c.padOffset[1], 0.09);
     this.ship.add(disk);
     const ring = new THREE.Mesh(
-      new THREE.RingGeometry(1.58, 1.66, 64),
+      new THREE.RingGeometry(c.padRadius * 0.88, c.padRadius * 0.93, 64),
       new THREE.MeshBasicMaterial({ color: "#ffbe65", side: THREE.DoubleSide }),
     );
-    ring.position.set(-3.2, 0, 0.1);
+    ring.position.set(c.padOffset[0], c.padOffset[1], 0.1);
     this.ship.add(ring);
     for (const y of [-0.38, 0.38])
-      this.box(this.ship, [0.14, 1.2, 0.015], [-3.2 + y, 0, 0.11], "#ffce87");
-    this.box(this.ship, [0.85, 0.13, 0.015], [-3.2, 0, 0.12], "#ffce87");
+      this.box(
+        this.ship,
+        [0.14, 1.2, 0.015],
+        [c.padOffset[0] + y, c.padOffset[1], 0.11],
+        "#ffce87",
+      );
+    this.box(
+      this.ship,
+      [0.85, 0.13, 0.015],
+      [c.padOffset[0], c.padOffset[1], 0.12],
+      "#ffce87",
+    );
   }
   buildDrone() {
     this.drone = new THREE.Group();
@@ -233,6 +247,19 @@ export class WorldView {
   }
   reset(sim) {
     this.sim = sim;
+    if (this.ship) {
+      this.ship.traverse((o) => {
+        o.geometry?.dispose();
+        if (o.material) o.material.dispose();
+      });
+      this.scene.remove(this.ship);
+    }
+    this.buildShip(sim.config);
+    this.drone.scale.set(
+      sim.config.armRadius / 0.32,
+      sim.config.armRadius / 0.32,
+      1,
+    );
     this.lastOcean = -1;
     this.pathPoints = [];
     this.lastPath = -1;
@@ -271,6 +298,15 @@ export class WorldView {
         (r.rotation.z =
           state.time * (60 + state.drone.motors[i] * 4) * (i % 2 ? 1 : -1)),
     );
+    if (state.time < this.lastPath) {
+      this.pathPoints = this.sim.log
+        .filter(
+          (_, i) =>
+            i % Math.max(1, Math.ceil(this.sim.log.length / 1800)) === 0,
+        )
+        .map((s) => new THREE.Vector3(...s.drone.position));
+      this.lastOcean = -1;
+    }
     if (state.time !== this.lastPath) {
       this.pathPoints.push(new THREE.Vector3(...state.drone.position));
       if (this.pathPoints.length > 1800) this.pathPoints.shift();

@@ -211,6 +211,210 @@
             enabled</label
           >
         </details>
+        <details>
+          <summary>Vessel geometry & response</summary>
+          <div class="pair">
+            <div>
+              <label for="shipLength">Ship length (m)</label
+              ><input
+                id="shipLength"
+                type="number"
+                min="5"
+                max="60"
+                step="1"
+                value="16"
+              />
+            </div>
+            <div>
+              <label for="shipBeam">Beam (m)</label
+              ><input
+                id="shipBeam"
+                type="number"
+                min="2"
+                max="20"
+                step=".1"
+                value="5.8"
+              />
+            </div>
+          </div>
+          <div class="pair">
+            <div>
+              <label for="freeboard">Freeboard (m)</label
+              ><input
+                id="freeboard"
+                type="number"
+                min="0.5"
+                max="8"
+                step=".1"
+                value="2"
+              />
+            </div>
+            <div>
+              <label for="padRadius">Pad radius (m)</label
+              ><input
+                id="padRadius"
+                type="number"
+                min="0.3"
+                max="8"
+                step=".1"
+                value="1.8"
+              />
+            </div>
+          </div>
+          <div class="pair">
+            <div>
+              <label for="padOffsetX">Pad fore/aft offset (m)</label
+              ><input
+                id="padOffsetX"
+                type="number"
+                min="-25"
+                max="20"
+                step=".1"
+                value="-3.2"
+              />
+            </div>
+            <div>
+              <label for="heading">Ship heading (rad)</label
+              ><input
+                id="heading"
+                type="number"
+                min="-6.28"
+                max="6.28"
+                step=".1"
+                value="0"
+              />
+            </div>
+          </div>
+          <label for="response-options"
+            >Response periods (s) and damping · six axes</label
+          >
+          <textarea id="response-options" rows="4">
+{"responsePeriods":[8,9,3.8,5.2,4.6,10],"responseDamping":[0.9,0.9,0.7,0.5,0.7,0.9]}</textarea
+          >
+          <p class="hint">
+            Surge, sway, heave, roll, pitch, yaw. These are illustrative values;
+            enter identified parameters for your vessel.
+          </p>
+        </details>
+        <details>
+          <summary>Propulsion & battery</summary>
+          <div class="pair">
+            <div>
+              <label for="maxRotorThrust">Max thrust / rotor (N)</label
+              ><input
+                id="maxRotorThrust"
+                type="number"
+                min="2"
+                max="100"
+                step="1"
+                value="15"
+              />
+            </div>
+            <div>
+              <label for="armRadius">Arm radius (m)</label
+              ><input
+                id="armRadius"
+                type="number"
+                min="0.15"
+                max="1"
+                step=".01"
+                value="0.32"
+              />
+            </div>
+          </div>
+          <div class="pair">
+            <div>
+              <label for="motorLagMs">Motor lag (ms)</label
+              ><input
+                id="motorLagMs"
+                type="number"
+                min="5"
+                max="500"
+                step="5"
+                value="55"
+              />
+            </div>
+            <div>
+              <label for="batteryWh">Battery energy (Wh)</label
+              ><input
+                id="batteryWh"
+                type="number"
+                min="1"
+                max="1000"
+                step="1"
+                value="80"
+              />
+            </div>
+          </div>
+          <div class="pair">
+            <div>
+              <label for="initialBattery">Initial charge (0–1)</label
+              ><input
+                id="initialBattery"
+                type="number"
+                min="0"
+                max="1"
+                step=".05"
+                value="1"
+              />
+            </div>
+          </div>
+        </details>
+        <details>
+          <summary>Communication & failures</summary>
+          <div class="pair">
+            <div>
+              <label for="commandLatencyMs">Command delay (ms)</label
+              ><input
+                id="commandLatencyMs"
+                type="number"
+                min="0"
+                max="3000"
+                step="50"
+                value="0"
+              />
+            </div>
+            <div>
+              <label for="commandDropout">Packet loss (0–1)</label
+              ><input
+                id="commandDropout"
+                type="number"
+                min="0"
+                max="1"
+                step=".05"
+                value="0"
+              />
+            </div>
+          </div>
+          <div class="pair">
+            <div>
+              <label for="commandTimeoutMs">Command expiry (ms)</label
+              ><input
+                id="commandTimeoutMs"
+                type="number"
+                min="100"
+                max="5000"
+                step="100"
+                value="1000"
+              />
+            </div>
+          </div>
+          <label for="fault-preset">Scheduled failure</label
+          ><select id="fault-preset">
+            <option value="none">None</option>
+            <option value="gps">GPS lost for 5 seconds</option>
+            <option value="deck">Deck tracker lost for 3 seconds</option>
+            <option value="link">Command link lost for 3 seconds</option>
+            <option value="motor">Motor 1 loses 35% thrust</option>
+            <option value="custom">Custom schedule</option>
+          </select>
+          <label for="faults">Failure schedule (JSON, seconds)</label
+          ><textarea id="faults" rows="4">[]</textarea>
+          <p class="hint">
+            Command expiry activates brake/hover. That response can still fail
+            in strong wind or with damaged motors.
+          </p>
+        </details>
         <button id="apply" class="primary full">Apply & reset scenario</button>
         <p class="hint" id="config-message">
           Changing settings takes effect on reset.
@@ -256,6 +460,37 @@
             <span id="duration-label">120</span> s</span
           >
         </div>
+        <div class="panel replay-panel">
+          <div class="section-title">
+            <h2>Flight replay</h2>
+            <span id="replay-status" class="eyebrow">LIVE SIMULATION</span>
+          </div>
+          <div class="action-row">
+            <label class="file-action" for="replay-file"
+              >Open saved flight<input
+                id="replay-file"
+                type="file"
+                accept=".json" /></label
+            ><button id="replay-current" class="secondary">
+              Replay this flight</button
+            ><button id="leave-replay" class="secondary" hidden>
+              Return to simulation
+            </button>
+          </div>
+          <div id="replay-controls" hidden>
+            <label for="replay-time"
+              >Recorded time
+              <output id="replay-time-label">0.00 s</output></label
+            ><input
+              id="replay-time"
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value="0"
+            />
+          </div>
+        </div>
         <div class="metrics">
           <div>
             <span>Pad clearance</span><strong id="metric-gap">—</strong>
@@ -287,6 +522,39 @@
             <span>Absolute height (m) · simulation time (s)</span
             ><span id="flight-count">1 frame recorded</span>
           </div>
+        </div>
+        <div class="panel">
+          <div class="section-title">
+            <h2>Ship motion · six axes</h2>
+            <span class="eyebrow">SIMULATED TRUTH</span>
+          </div>
+          <div class="axis-grid" id="ship-axes"></div>
+        </div>
+        <div class="panel comparison-panel">
+          <div class="section-title">
+            <h2>Compare controllers</h2>
+            <span class="eyebrow">MATCHED SCENARIOS</span>
+          </div>
+          <p class="hint">
+            Compare the attached model with the reactive baseline using the
+            applied scenario. When reactive is attached, compare with
+            predictive. Each run starts fresh. Up to three seeds, 120 seconds
+            per run.
+          </p>
+          <label for="compare-seeds">Same wave seeds for both models</label
+          ><input id="compare-seeds" value="17,18,19" />
+          <div class="action-row">
+            <button id="compare" class="primary">Run comparison</button
+            ><button id="cancel-compare" class="secondary" disabled>
+              Cancel</button
+            ><button id="export-comparison" class="secondary" disabled>
+              Export comparison
+            </button>
+          </div>
+          <p id="comparison-status" class="hint" role="status">
+            Attach a controller to begin.
+          </p>
+          <div id="comparison-results" class="table-scroll"></div>
         </div>
         <div class="panel result" id="result" hidden>
           <h2 id="result-title"></h2>
@@ -347,6 +615,8 @@
         </div>
         <p id="decision">Awaiting first control tick</p>
         <pre id="command">No command yet</pre>
+        <p class="hint" id="link-health">Command link ready</p>
+        <p class="hint" id="active-faults">No scheduled failures active</p>
         <div class="section-title">
           <h2>Sensor stream</h2>
           <span class="eyebrow">MEASURED</span>
@@ -369,7 +639,7 @@
           <span id="battery">100% battery</span>
         </div>
         <div id="motors"></div>
-        <p class="hint">
+        <p class="hint" id="airframe-summary">
           X quadrotor · motor lag 55 ms · thrust + gravity + drag · fixed
           numerical integration.
         </p>

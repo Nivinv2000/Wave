@@ -1,4 +1,12 @@
-import { makeConfig, Ocean, Vessel, Wind } from "./environment.mjs";
+import {
+  makeConfig,
+  Ocean,
+  Vessel,
+  Wind,
+  activeFaults,
+} from "./environment.mjs";
+import { insideCabin, onDeck } from "./geometry.mjs";
+import { CommandLink } from "./command-link.mjs";
 import { Drone, PHYSICS_DT, CONTROL_DT } from "./drone.mjs";
 import { Sensors } from "./sensors.mjs";
 import {
@@ -32,6 +40,10 @@ export class Simulation {
       label: "Awaiting controller",
     };
     this.drone.setCommand(this.command);
+    this.issuedCommand = this.command;
+    this.link = new CommandLink(this.config, this.command);
+    this.previousFaults = "";
+    this.previousFailsafe = false;
     this.sensors.update(0, PHYSICS_DT, this.drone, this.ship, this.ocean);
     this.record();
   }
@@ -39,6 +51,7 @@ export class Simulation {
     return {
       ...this.sensors.observation(this.time),
       battery: this.drone.battery,
+      commandLink: this.link.snapshot(this.time),
       mission: {
         landingGearHeight: this.drone.legHeight,
         duration: this.config.duration,
@@ -47,9 +60,42 @@ export class Simulation {
   }
   advance(command) {
     if (this.status !== "running") return this.snapshot();
-    this.drone.setCommand(command);
-    this.command = this.drone.command;
+    this.link.send(command, this.time);
+    this.issuedCommand = structuredClone(command);
     for (let k = 0; k < Math.round(CONTROL_DT / PHYSICS_DT); k++) {
+      this.command = this.link.update(this.time, this.sensors.estimate);
+      this.drone.setCommand(this.command);
+      const faults = activeFaults(this.config, this.time),
+        key = JSON.stringify(faults);
+      if (
+        key !== this.previousFaults &&
+        (faults.length || this.previousFaults !== "")
+      ) {
+        this.events.push({
+          time: this.time,
+          type: "faults",
+          active: faults,
+          reason: faults.length
+            ? "Active faults: " + faults.map((f) => f.target).join(", ")
+            : "Scheduled faults cleared",
+        });
+      }
+      this.previousFaults = key;
+      if (this.previousFailsafe !== this.link.failsafe)
+        this.events.push({
+          time: this.time,
+          type: "command-link",
+          reason: this.link.failsafe
+            ? "Command deadline exceeded"
+            : "Command delivery recovered",
+        });
+      this.previousFailsafe = this.link.failsafe;
+      this.drone.motorEfficiency = [1, 1, 1, 1];
+      for (const f of faults.filter((f) => f.target === "motor"))
+        this.drone.motorEfficiency[f.motor] = Math.min(
+          this.drone.motorEfficiency[f.motor],
+          f.factor,
+        );
       this.time += PHYSICS_DT;
       this.ship.update(this.time, PHYSICS_DT);
       this.wind.update(PHYSICS_DT);
@@ -80,21 +126,11 @@ export class Simulation {
       c = this.config,
       local = rotate(qconj(s.quaternion), sub(d.position, s.position)),
       pad = s.pad();
-    if (
-      local[0] > 2.2 &&
-      local[0] < 6.8 &&
-      Math.abs(local[1]) < 1.9 &&
-      local[2] > 0 &&
-      local[2] < 2.8
-    ) {
+    if (insideCabin(c, local, 0.1)) {
       this.finish("collision", { reason: "Contact with ship superstructure" });
       return;
     }
-    if (
-      Math.abs(local[0]) < c.shipLength / 2 &&
-      Math.abs(local[1]) < c.shipBeam / 2 &&
-      local[2] <= d.legHeight + 0.03
-    ) {
+    if (onDeck(c, local) && local[2] <= d.legHeight + 0.03) {
       const surfaceVel = s.pointVelocity(d.position),
         relative = sub(d.velocity, surfaceVel),
         normal = rotate(s.quaternion, [0, 0, 1]),
@@ -141,6 +177,7 @@ export class Simulation {
       });
   }
   finish(status, extra) {
+    if (this.status !== "running") return;
     this.status = status;
     this.outcome = { status, time: this.time, ...extra };
     this.events.push(this.outcome);
@@ -156,11 +193,16 @@ export class Simulation {
         quaternion: [...this.ship.quaternion],
         euler: [...this.ship.euler],
         velocity: [...this.ship.velocity],
+        axes: [...this.ship.axes],
+        rates: [...this.ship.rates],
         pad: this.ship.pad(),
       },
       wind: [...this.wind.velocity],
       observation: this.observation(),
       command: this.command,
+      issuedCommand: this.issuedCommand,
+      link: this.link.snapshot(this.time),
+      faults: activeFaults(this.config, this.time),
     };
   }
   record() {
@@ -169,7 +211,7 @@ export class Simulation {
   export() {
     return {
       schemaVersion: 1,
-      simulatorVersion: "0.1.0",
+      simulatorVersion: "0.2.0",
       description:
         "Reduced-order engineering simulation; not vessel-calibrated",
       config: this.config,

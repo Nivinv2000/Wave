@@ -104,6 +104,17 @@ export const DEFAULTS = {
   freeboard: 2,
   padOffset: [-3.2, 0, 0.05],
   padRadius: 1.8,
+  responsePeriods: [8, 9, 3.8, 5.2, 4.6, 10],
+  responseDamping: [0.9, 0.9, 0.7, 0.5, 0.7, 0.9],
+  maxRotorThrust: 15,
+  armRadius: 0.32,
+  motorLagMs: 55,
+  batteryWh: 80,
+  initialBattery: 1,
+  commandLatencyMs: 0,
+  commandDropout: 0,
+  commandTimeoutMs: 1000,
+  faults: [],
 };
 export function makeConfig(input = {}) {
   const preset = input.preset ?? "light";
@@ -134,6 +145,14 @@ export function makeConfig(input = {}) {
     padRadius: [0.3, 8],
     initialOffset: [-100, 100],
     tidePhase: [-6.2832, 6.2832],
+    maxRotorThrust: [2, 100],
+    armRadius: [0.15, 1],
+    motorLagMs: [5, 500],
+    batteryWh: [1, 1000],
+    initialBattery: [0, 1],
+    commandLatencyMs: [0, 3000],
+    commandDropout: [0, 1],
+    commandTimeoutMs: [100, 5000],
   };
   for (const [k, [a, b]] of Object.entries(bounds))
     if (!Number.isFinite(c[k]) || c[k] < a || c[k] > b)
@@ -147,7 +166,67 @@ export function makeConfig(input = {}) {
     throw new Error("padOffset requires three finite metres");
   if (!["vision", "radio"].includes(c.trackerSource))
     throw new Error("trackerSource must be vision or radio");
+  for (const [name, min, max] of [
+    ["responsePeriods", 1, 30],
+    ["responseDamping", 0.1, 3],
+  ]) {
+    if (
+      !Array.isArray(c[name]) ||
+      c[name].length !== 6 ||
+      !c[name].every((v) => Number.isFinite(v) && v >= min && v <= max)
+    )
+      throw new Error(
+        `${name} needs six numbers in [${min}, ${max}] in surge/sway/heave/roll/pitch/yaw order`,
+      );
+    c[name] = [...c[name]];
+  }
+  if (
+    Math.abs(c.padOffset[0]) + c.padRadius > c.shipLength / 2 ||
+    Math.abs(c.padOffset[1]) + c.padRadius > c.shipBeam / 2
+  )
+    throw new Error("Landing pad must fit on the aft rectangular deck");
+  if (
+    c.padOffset[0] + c.padRadius > c.shipLength * 0.159375 ||
+    Math.abs(c.padOffset[2] - 0.05) > 1e-9
+  )
+    throw new Error("Pad must be aft of the cabin and 0.05 m above the deck");
+  c.padOffset = [...c.padOffset];
+  if (!Array.isArray(c.faults) || c.faults.length > 50)
+    throw new Error("faults must be an array of up to 50 events");
+  c.faults = c.faults.map((f) => {
+    if (
+      !f ||
+      !["gps", "deck", "link", "motor"].includes(f.target) ||
+      !Number.isFinite(f.start) ||
+      !Number.isFinite(f.end) ||
+      f.start < 0 ||
+      f.end > 600 ||
+      f.end <= f.start
+    )
+      throw new Error(
+        "Each fault needs target gps/deck/link/motor and 0 <= start < end <= 600 seconds",
+      );
+    if (
+      f.target === "motor" &&
+      (!Number.isInteger(f.motor) ||
+        f.motor < 0 ||
+        f.motor > 3 ||
+        !Number.isFinite(f.factor) ||
+        f.factor < 0 ||
+        f.factor > 1)
+    )
+      throw new Error("Motor faults need motor index 0..3 and factor 0..1");
+    return { ...f };
+  });
   return c;
+}
+export function activeFaults(c, t, target) {
+  return c.faults.filter(
+    (f) =>
+      f.start <= t + 1e-9 &&
+      t < f.end - 1e-9 &&
+      (!target || f.target === target),
+  );
 }
 export class Ocean {
   constructor(config) {
@@ -252,8 +331,8 @@ export class Vessel {
       clamp(-Math.atan2(bow - stern, c.shipLength * 0.76), -0.55, 0.55),
       0.025 * (port - starboard),
     ];
-    const periods = [8, 9, 3.8, 5.2, 4.6, 10],
-      damping = [0.9, 0.9, 0.7, 0.5, 0.7, 0.9];
+    const periods = c.responsePeriods,
+      damping = c.responseDamping;
     for (let i = 0; i < 6; i++) {
       const wn = (2 * Math.PI) / periods[i];
       this.rates[i] +=

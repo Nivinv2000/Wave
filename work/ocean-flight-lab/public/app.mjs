@@ -1,9 +1,16 @@
+import { Replay } from "./core/replay.mjs";
+import { summarize } from "./core/evaluation.mjs";
 import { Simulation } from "./core/simulation.mjs";
 import { PRESETS } from "./core/environment.mjs";
 import { WorldView } from "./scene.mjs";
 import { ModelRunner } from "./model-runner.mjs";
 import { sub, norm, rotate, qconj, dot } from "./core/math.mjs";
 const $ = (id) => document.getElementById(id);
+let comparisonReport = null,
+  comparisonToken = 0,
+  comparing = false,
+  attachedSource = "",
+  eventCount = 0;
 let sim = new Simulation(),
   view = null,
   runner = new ModelRunner(),
@@ -40,6 +47,19 @@ const numeric = [
   "droneMass",
   "initialHeight",
   "noise",
+  "shipLength",
+  "shipBeam",
+  "freeboard",
+  "padRadius",
+  "heading",
+  "maxRotorThrust",
+  "armRadius",
+  "motorLagMs",
+  "batteryWh",
+  "initialBattery",
+  "commandLatencyMs",
+  "commandDropout",
+  "commandTimeoutMs",
 ];
 function config() {
   const c = { preset: $("weather").value };
@@ -47,6 +67,11 @@ function config() {
   c.gpsEnabled = $("gpsEnabled").checked;
   c.trackerEnabled = $("trackerEnabled").checked;
   c.trackerSource = $("trackerSource").value;
+  c.padOffset = [Number($("padOffsetX").value), 0, 0.05];
+  const response = JSON.parse($("response-options").value);
+  c.responsePeriods = response.responsePeriods;
+  c.responseDamping = response.responseDamping;
+  c.faults = JSON.parse($("faults").value);
   return c;
 }
 function log(message) {
@@ -69,7 +94,8 @@ function error(message) {
 }
 function pause() {
   running = false;
-  $("play").textContent = "▶ Run simulation";
+  $("play").textContent =
+    sim instanceof Replay ? "▶ Play replay" : "▶ Run simulation";
 }
 async function reset() {
   pause();
@@ -77,6 +103,7 @@ async function reset() {
   modelReady = false;
   $("attach").disabled = true;
   $("apply").disabled = true;
+  $("compare").disabled = true;
   $("play").disabled = true;
   $("step").disabled = true;
   try {
@@ -92,6 +119,8 @@ async function reset() {
     if (mine !== generation) return;
     sim = next;
     attached = kind;
+    attachedSource = source;
+    eventCount = 0;
     modelMetadata = {
       type: kind,
       name: kind === "custom" ? $("model-file").files[0]?.name : kind,
@@ -110,6 +139,9 @@ async function reset() {
           : null,
     };
     modelReady = true;
+    $("replay-controls").hidden = true;
+    $("leave-replay").hidden = true;
+    $("replay-status").textContent = "LIVE SIMULATION";
     lastDecision = "";
     $("events").replaceChildren();
     $("result").hidden = true;
@@ -139,11 +171,15 @@ async function reset() {
       $("apply").disabled = false;
       $("play").disabled = !modelReady;
       $("step").disabled = !modelReady;
+      $("compare").disabled = !modelReady;
     }
   }
 }
 function exportLog() {
-  const data = { ...sim.export(), controller: modelMetadata };
+  const data =
+    sim instanceof Replay
+      ? sim.export()
+      : { ...sim.export(), controller: modelMetadata };
   const blob = new Blob([JSON.stringify(data)], { type: "application/json" }),
     url = URL.createObjectURL(blob),
     a = document.createElement("a");
@@ -153,6 +189,15 @@ function exportLog() {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 async function tick() {
+  if (sim instanceof Replay) {
+    sim.advance();
+    if (sim.ended) {
+      pause();
+      if (sim.outcome) showResult();
+    }
+    updateUi();
+    return;
+  }
   if (busy || !modelReady || sim.status !== "running") return;
   busy = true;
   const mine = generation;
@@ -178,6 +223,7 @@ async function tick() {
 }
 function showResult() {
   const out = sim.outcome;
+  if (!out) return;
   $("result").hidden = false;
   $("result").classList.toggle("bad", out.status !== "landed");
   $("result-title").textContent =
@@ -201,11 +247,15 @@ function updateUi() {
     relative = sub(d.velocity, p.velocity);
   $("time").textContent = s.time.toFixed(2);
   $("run-status").textContent =
-    s.status === "running"
+    sim instanceof Replay
       ? running
-        ? "RUNNING"
-        : "PAUSED"
-      : s.status.toUpperCase().replaceAll("-", " ");
+        ? "REPLAY PLAYING"
+        : "REPLAY PAUSED"
+      : s.status === "running"
+        ? running
+          ? "RUNNING"
+          : "PAUSED"
+        : s.status.toUpperCase().replaceAll("-", " ");
   $("metric-gap").textContent = (local[2] - 0.28).toFixed(2) + " m";
   $("metric-relative").textContent =
     dot(relative, rotate(p.quaternion, [0, 0, 1])).toFixed(2) + " m/s";
@@ -221,7 +271,8 @@ function updateUi() {
     (_, v) => (typeof v === "number" ? Number(v.toFixed(3)) : v),
     2,
   );
-  $("inference-ms").textContent = runner.lastMs.toFixed(1) + " ms";
+  $("inference-ms").textContent =
+    sim instanceof Replay ? "recorded" : runner.lastMs.toFixed(1) + " ms";
   $("estimate-error").textContent =
     norm(sub(d.position, s.observation.estimate.position)).toFixed(2) + " m";
   $("battery").textContent = (d.battery * 100).toFixed(1) + "% battery";
@@ -256,10 +307,57 @@ function updateUi() {
     $("sensors").append(tr);
   }
   d.motors.forEach((v, i) => {
-    $("motor-" + i).style.width = Math.min(100, (v / 15) * 100) + "%";
+    $("motor-" + i).style.width =
+      Math.min(100, (v / sim.config.maxRotorThrust) * 100) + "%";
     $("motor-val-" + i).textContent = v.toFixed(1) + " N";
   });
   $("flight-count").textContent = sim.log.length + " frames recorded";
+  const axes = s.ship.axes ?? [
+    null,
+    null,
+    s.ship.position[2] - sim.config.freeboard,
+    ...s.ship.euler,
+  ];
+  $("ship-axes").replaceChildren();
+  ["Surge", "Sway", "Heave", "Roll", "Pitch", "Yaw"].forEach((name, i) => {
+    const cell = document.createElement("div"),
+      label = document.createElement("span"),
+      value = document.createElement("strong");
+    label.textContent = name;
+    value.textContent =
+      axes[i] === null
+        ? "—"
+        : (axes[i] * (i > 2 ? 180 / Math.PI : 1)).toFixed(2) +
+          (i > 2 ? "°" : " m");
+    cell.append(label, value);
+    $("ship-axes").append(cell);
+  });
+  $("link-health").textContent = s.link
+    ? `Command delay ${s.link.latencyMs} ms · ${s.link.delivered} delivered / ${s.link.dropped} lost · ${s.link.failsafe ? "BRAKE / HOVER ACTIVE" : "receiving"}`
+    : "Recorded before command-link simulation";
+  $("active-faults").textContent = s.faults?.length
+    ? "Active failures: " +
+      s.faults
+        .map((f) =>
+          f.target === "motor"
+            ? `motor ${f.motor + 1} at ${Math.round(f.factor * 100)}%`
+            : f.target,
+        )
+        .join(", ")
+    : "No scheduled failures active";
+  $("airframe-summary").textContent =
+    `X quadrotor · ${sim.config.droneMass} kg · ${sim.config.maxRotorThrust} N / rotor · ${sim.config.motorLagMs} ms motor lag`;
+  if (sim instanceof Replay) {
+    $("replay-time").value = sim.time;
+    $("replay-time-label").textContent =
+      `${sim.time.toFixed(2)} / ${sim.endTime.toFixed(2)} s`;
+  }
+  if (sim.events.length < eventCount) {
+    $("events").replaceChildren();
+    eventCount = 0;
+  }
+  for (const event of sim.events.slice(eventCount)) log(event.reason);
+  eventCount = sim.events.length;
   drawTelemetry();
 }
 function drawTelemetry() {
@@ -380,6 +478,16 @@ $("model-file").addEventListener("change", async () => {
   }
 });
 $("play").addEventListener("click", async () => {
+  if (sim instanceof Replay && !running) {
+    if (sim.ended) {
+      sim.seek(0);
+      if (view) view.lastPath = Infinity;
+    }
+    running = true;
+    lastTick = 0;
+    $("play").textContent = "Ⅱ Pause replay";
+    return;
+  }
   if (running) {
     pause();
     return;
@@ -434,5 +542,276 @@ function frame(t) {
   }
   requestAnimationFrame(frame);
 }
+
+function downloadJson(data, name) {
+  const url = URL.createObjectURL(
+    new Blob([JSON.stringify(data)], { type: "application/json" }),
+  );
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function openReplay(data) {
+  const recording = new Replay(data);
+  pause();
+  ++generation;
+  runner.dispose();
+  modelReady = false;
+  sim = recording;
+  eventCount = 0;
+  $("events").replaceChildren();
+  $("result").hidden = true;
+  $("replay-controls").hidden = false;
+  $("leave-replay").hidden = false;
+  $("replay-time").max = sim.endTime;
+  $("replay-status").textContent =
+    "RECORDED FLIGHT · " +
+    (data.controller?.name ?? data.controller?.type ?? "controller");
+  $("play").disabled = false;
+  $("step").disabled = false;
+  $("compare").disabled = true;
+  $("play").textContent = "▶ Play replay";
+  $("model-state").textContent = "Viewing saved states; no model is executing";
+  $("duration-label").textContent = sim.endTime.toFixed(2);
+  $("scene-title").textContent = PRESETS[sim.config.preset].label;
+  $("weather-summary").textContent =
+    `Recorded · Hs ${sim.config.hs} m · seed ${sim.config.seed}`;
+  view?.reset(sim);
+  updateUi();
+}
+$("replay-current").addEventListener("click", () => {
+  if (!comparing)
+    openReplay(
+      sim instanceof Replay
+        ? sim.export()
+        : { ...sim.export(), controller: modelMetadata },
+    );
+});
+$("leave-replay").addEventListener("click", reset);
+$("replay-file").addEventListener("change", async () => {
+  const file = $("replay-file").files[0];
+  if (!file) return;
+  try {
+    if (file.size > 100_000_000)
+      throw new Error("Flight recording must be under 100 MB");
+    openReplay(JSON.parse(await file.text()));
+  } catch (e) {
+    $("replay-status").textContent = e.message;
+  }
+  $("replay-file").value = "";
+});
+$("replay-time").addEventListener("input", () => {
+  if (!(sim instanceof Replay)) return;
+  pause();
+  sim.seek(Number($("replay-time").value));
+  if (view) view.lastPath = Infinity;
+  $("result").hidden = true;
+  if (sim.ended && sim.outcome) showResult();
+  updateUi();
+});
+$("fault-preset").addEventListener("change", () => {
+  const target = $("fault-preset").value;
+  if (target === "custom") return;
+  $("faults").value = JSON.stringify(
+    target === "none"
+      ? []
+      : [
+          {
+            target,
+            start: 5,
+            end: target === "motor" ? 120 : target === "gps" ? 10 : 8,
+            ...(target === "motor" ? { motor: 0, factor: 0.65 } : {}),
+          },
+        ],
+    null,
+    2,
+  );
+});
+$("cancel-compare").addEventListener("click", () => {
+  ++comparisonToken;
+  $("comparison-status").textContent = "Cancelling comparison…";
+});
+$("export-comparison").addEventListener("click", () => {
+  if (comparisonReport)
+    downloadJson(
+      {
+        ...comparisonReport,
+        results: comparisonReport.results.map(({ recording, ...r }) => r),
+      },
+      "controller-comparison.json",
+    );
+});
+function renderComparison() {
+  const container = $("comparison-results");
+  container.replaceChildren();
+  const p = document.createElement("p");
+  p.className = "hint";
+  p.textContent = Object.entries(comparisonReport.summaries)
+    .map(
+      ([name, r]) =>
+        `${name}: ${r.landings}/${r.attempts} landings, ${r.impacts} impacts, ${r.timeouts} timeouts, ${r.errors} errors`,
+    )
+    .join(" · ");
+  container.append(p);
+  const table = document.createElement("table");
+  table.className = "comparison-table";
+  const head = document.createElement("tr");
+  for (const label of ["Model", "Seed", "Outcome", "Time", "Inspect"]) {
+    const th = document.createElement("th");
+    th.textContent = label;
+    head.append(th);
+  }
+  table.append(head);
+  for (const r of comparisonReport.results) {
+    const tr = document.createElement("tr");
+    for (const value of [
+      r.controller,
+      r.seed,
+      r.status,
+      r.time.toFixed(2) + " s",
+    ]) {
+      const td = document.createElement("td");
+      td.textContent = value;
+      tr.append(td);
+    }
+    const td = document.createElement("td"),
+      button = document.createElement("button");
+    button.className = "secondary";
+    button.textContent = "Replay";
+    button.addEventListener("click", () => {
+      if (!comparing) openReplay(r.recording);
+    });
+    td.append(button);
+    tr.append(td);
+    table.append(tr);
+  }
+  container.append(table);
+}
+$("compare").addEventListener("click", async () => {
+  if (!modelReady || comparing || sim instanceof Replay) return;
+  const seeds = $("compare-seeds")
+    .value.split(",")
+    .map((s) => Number(s.trim()));
+  if (
+    seeds.length > 3 ||
+    !seeds.length ||
+    new Set(seeds).size !== seeds.length ||
+    !seeds.every((n) => Number.isInteger(n) && n >= 0 && n <= 4294967295) ||
+    sim.config.duration > 120
+  ) {
+    $("comparison-status").textContent =
+      "Use 1–3 distinct unsigned integer seeds and an episode of at most 120 seconds. Use the CLI for larger evaluations.";
+    return;
+  }
+  pause();
+  ++generation;
+  runner.dispose();
+  modelReady = false;
+  comparing = true;
+  const mine = ++comparisonToken,
+    frozen = structuredClone(sim.config);
+  const models = [
+    {
+      type: attached === "reactive" ? "predictive" : "reactive",
+      name: attached === "reactive" ? "predictive" : "reactive",
+      options: {},
+    },
+    structuredClone(modelMetadata),
+  ];
+  const controls = [
+    "play",
+    "step",
+    "reset",
+    "apply",
+    "attach",
+    "compare",
+    "replay-current",
+    "replay-file",
+    "leave-replay",
+    "controller",
+    "model-file",
+  ];
+  controls.forEach((id) => ($(id).disabled = true));
+  $("cancel-compare").disabled = false;
+  $("export-comparison").disabled = true;
+  comparisonReport = {
+    schemaVersion: 1,
+    simulatorVersion: "0.2.0",
+    config: frozen,
+    seeds,
+    models,
+    completed: false,
+    results: [],
+    summaries: {},
+  };
+  $("comparison-results").replaceChildren();
+  let cancelled = false;
+  try {
+    for (const seed of seeds)
+      for (const metadata of models) {
+        if (mine !== comparisonToken) {
+          cancelled = true;
+          break;
+        }
+        const episode = new Simulation({ ...frozen, seed }),
+          policy = new ModelRunner();
+        $("comparison-status").textContent =
+          `Running ${metadata.name} · seed ${seed} (${comparisonReport.results.length + 1}/${seeds.length * 2})`;
+        try {
+          await policy.attach(
+            metadata.type,
+            metadata.type === "custom" ? attachedSource : "",
+            metadata.options,
+          );
+          let ticks = 0;
+          while (episode.status === "running") {
+            if (mine !== comparisonToken) {
+              cancelled = true;
+              break;
+            }
+            episode.advance(await policy.step(episode.observation()));
+            if (++ticks % 20 === 0)
+              await new Promise((resolve) => setTimeout(resolve, 0));
+          }
+        } catch (e) {
+          episode.finish("model-error", { reason: e.message });
+          episode.record();
+        } finally {
+          policy.dispose();
+        }
+        if (cancelled) break;
+        comparisonReport.results.push({
+          controller: metadata.name,
+          seed,
+          ...episode.outcome,
+          recording: { ...episode.export(), controller: metadata },
+        });
+        for (const m of models)
+          comparisonReport.summaries[m.name] = summarize(
+            comparisonReport.results.filter((r) => r.controller === m.name),
+          );
+        renderComparison();
+      }
+    comparisonReport.completed = !cancelled;
+    $("comparison-status").textContent = cancelled
+      ? "Cancelled. Completed runs are retained; this is a partial comparison."
+      : "Comparison complete. Inspect any flight with Replay; reset to run your controller again.";
+  } catch (e) {
+    $("comparison-status").textContent = e.message;
+  } finally {
+    comparing = false;
+    controls.forEach((id) => ($(id).disabled = false));
+    $("play").disabled = true;
+    $("step").disabled = true;
+    $("compare").disabled = true;
+    $("cancel-compare").disabled = true;
+    $("export-comparison").disabled = !comparisonReport.results.length;
+    $("model-state").textContent =
+      "Comparison finished. Attach/reset before another live flight.";
+  }
+});
+
 await reset();
 requestAnimationFrame(frame);

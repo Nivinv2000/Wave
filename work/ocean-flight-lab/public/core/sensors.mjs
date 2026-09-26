@@ -13,6 +13,8 @@ import {
   wrap,
   fromEuler,
 } from "./math.mjs";
+import { activeFaults } from "./environment.mjs";
+import { rangeRay } from "./geometry.mjs";
 export class Sensors {
   constructor(c, drone) {
     this.c = c;
@@ -46,7 +48,7 @@ export class Sensors {
     return std * this.c.noise * this.normal();
   }
   packet(name, t, delay, value, drop = 0) {
-    if (this.random() < drop) {
+    if (this.random() < drop || activeFaults(this.c, t, name).length) {
       this.dropped++;
       return;
     }
@@ -130,26 +132,15 @@ export class Sensors {
       else this.dropped++;
     }
     if (due("rangefinder", 20)) {
-      const above =
-          Math.abs(local[0]) < c.shipLength / 2 &&
-          Math.abs(local[1]) < c.shipBeam / 2,
-        range = above
-          ? local[2] - drone.legHeight
-          : drone.position[2] -
-            ocean.sample(...drone.position.slice(0, 2), t).height -
-            drone.legHeight;
-      if (
-        range >= 0 &&
-        range < 20 &&
-        Math.abs(toEuler(drone.quaternion)[0]) < 0.6
-      )
+      const hit = rangeRay(c, drone, ship, ocean, t);
+      if (hit)
         this.packet(
           "rangefinder",
           t,
           0.025,
           {
-            range: Math.max(0, range + this.noise(0.025)),
-            surface: above ? "deck" : "water",
+            range: Math.max(0, hit.range + this.noise(0.025)),
+            surface: hit.surface,
           },
           c.rain * 0.15,
         );
@@ -186,6 +177,10 @@ export class Sensors {
     for (const pk of this.queue) {
       if (pk.delivery > t + 1e-9) {
         pending.push(pk);
+        continue;
+      }
+      if (activeFaults(c, t, pk.name).length) {
+        this.dropped++;
         continue;
       }
       this.latest[pk.name] = pk;

@@ -4,8 +4,15 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 const root = path.dirname(fileURLToPath(import.meta.url)),
   publicDir = path.join(root, "public");
+try {
+  process.loadEnvFile(path.join(root, ".env"));
+} catch (error) {
+  if (error.code !== "ENOENT") throw error;
+}
 const port = Number(process.env.PORT ?? 4180),
   host = process.env.HOST ?? "127.0.0.1";
+if (!Number.isInteger(port) || port < 1 || port > 65535)
+  throw new Error("PORT must be 1..65535");
 const endpoint = new URL(process.env.MODEL_ENDPOINT ?? "http://127.0.0.1:8765");
 if (
   endpoint.protocol !== "http:" ||
@@ -26,6 +33,19 @@ const server = http.createServer(async (req, res) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("Cache-Control", "no-store");
     const url = new URL(req.url, "http://localhost");
+    if (url.pathname === "/api/health") {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          name: "Ocean Flight Lab",
+          version: "0.2.0",
+          database: null,
+          physicsHz: 200,
+          controllerHz: 20,
+        }),
+      );
+      return;
+    }
     if (url.pathname.startsWith("/api/model/")) {
       if (req.method !== "POST") {
         res.writeHead(405);

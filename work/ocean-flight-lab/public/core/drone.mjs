@@ -45,8 +45,10 @@ export class Drone {
   constructor(c, pad) {
     this.c = c;
     this.mass = c.droneMass;
-    this.inertia = [0.055, 0.055, 0.095].map((v) => (v * c.droneMass) / 3);
-    this.arm = 0.32 / Math.sqrt(2);
+    this.inertia = [0.055, 0.055, 0.095].map(
+      (v) => ((v * c.droneMass) / 3) * (c.armRadius / 0.32) ** 2,
+    );
+    this.arm = c.armRadius / Math.sqrt(2);
     this.rotors = [
       [this.arm, this.arm, 1],
       [-this.arm, this.arm, -1],
@@ -59,8 +61,9 @@ export class Drone {
     this.omega = [0, 0, 0];
     this.acceleration = [0, 0, 0];
     this.motors = Array(4).fill((this.mass * G) / 4);
-    this.maxRotorThrust = 15;
-    this.battery = 1;
+    this.maxRotorThrust = c.maxRotorThrust;
+    this.battery = c.initialBattery;
+    this.motorEfficiency = [1, 1, 1, 1];
     this.legHeight = 0.28;
     this.command = {
       mode: "velocity",
@@ -75,7 +78,8 @@ export class Drone {
   }
   step(dt, wind, estimate) {
     const cmd = this.command,
-      limit = this.maxRotorThrust * (0.8 + 0.2 * this.battery);
+      limit =
+        this.battery > 0 ? this.maxRotorThrust * (0.8 + 0.2 * this.battery) : 0;
     let motor;
     if (cmd.mode === "motors") motor = cmd.motors.map((v) => v * limit);
     else {
@@ -127,10 +131,12 @@ export class Drone {
         ),
       );
     }
+    motor = motor.map((v, i) => v * this.motorEfficiency[i]);
     this.motorTargets = motor;
     for (let i = 0; i < 4; i++)
       this.motors[i] +=
-        (motor[i] - this.motors[i]) * (1 - Math.exp(-dt / 0.055));
+        (motor[i] - this.motors[i]) *
+        (1 - Math.exp(-dt / (this.c.motorLagMs / 1000)));
     const thrust = this.motors.reduce((a, b) => a + b, 0),
       force = rotate(this.quaternion, [0, 0, thrust]),
       relative = sub(this.velocity, wind),
@@ -158,7 +164,11 @@ export class Drone {
     const power =
       35 +
       this.motors.reduce((s, f) => s + 7 * Math.pow(Math.max(0, f), 1.5), 0);
-    this.battery = clamp(this.battery - (power * dt) / (80 * 3600), 0, 1);
+    this.battery = clamp(
+      this.battery - (power * dt) / (this.c.batteryWh * 3600),
+      0,
+      1,
+    );
   }
   truth() {
     return {
@@ -171,6 +181,7 @@ export class Drone {
       motors: [...this.motors],
       motorTargets: [...this.motorTargets],
       battery: this.battery,
+      motorEfficiency: [...this.motorEfficiency],
     };
   }
 }
