@@ -1,0 +1,124 @@
+<?xml version="1.0" ?>
+
+<!-- Holybro X500 quadrotor for gym-pybullet-drones, with parameters taken from
+     the PX4 Gazebo model so the training plant matches the plant the policy is
+     later flown on.
+
+     Source: PX4-Autopilot/Tools/simulation/gz/models/x500_base/model.sdf
+             PX4-Autopilot/Tools/simulation/gz/models/x500/model.sdf
+       mass 2.0 kg, ixx = iyy = 0.0216667, izz = 0.04
+       rotors at (+/-0.174, +/-0.174) m  ->  arm = sqrt(2) * 0.174 = 0.24608 m
+       motorConstant  8.54858e-06 N/(rad/s)^2, maxRotVelocity 1000 rad/s
+       momentConstant 0.016 (torque / thrust)
+
+     gym-pybullet-drones expresses kf and km per RPM^2, not per (rad/s)^2:
+       kf = 8.54858e-06 * (2*pi/60)^2 = 9.37669e-08
+       km = 0.016 * kf                = 1.50027e-09
+     Peak thrust is 4 * 8.54858e-06 * 1000^2 = 34.19 N against a 19.6 N weight
+     (BaseAviary uses g = 9.8), so thrust2weight = 1.7446.
+
+     CAUTION: element ORDER matters. BaseAviary._parseURDFParameters() indexes
+     this tree positionally - robot[0] must be <properties>, robot[1] must be
+     base_link, and base_link's children must be inertial, visual, collision in
+     that order, with collision holding <origin> then <geometry><cylinder>.
+
+     gnd_eff_coeff and dw_coeff_* are carried over from the Crazyflie model and
+     are NOT identified for this airframe. They are inert under Physics.PYB and
+     Physics.PYB_DRAG; do not enable Physics.PYB_GND / PYB_DW / PYB_GND_DRAG_DW
+     with this file and treat the result as calibrated. -->
+
+<robot name="x500">
+
+  <properties arm="0.24608" kf="9.37669e-08" km="1.50027e-09" thrust2weight="1.7446" max_speed_kmh="50" gnd_eff_coeff="11.36859" prop_radius="0.127" drag_coeff_xy="4.0e-5" drag_coeff_z="6.0e-5" dw_coeff_1="2267.18" dw_coeff_2=".16" dw_coeff_3="-.11" />
+
+  <link name="base_link">
+
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="2.0"/>
+      <inertia ixx="0.02166667" ixy="0.0" ixz="0.0" iyy="0.02166667" iyz="0.0" izz="0.04"/>
+    </inertial>
+
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.25" length="0.09"/>
+      </geometry>
+      <material name="darkgrey">
+        <color rgba=".25 .25 .28 1"/>
+      </material>
+    </visual>
+
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.25" length="0.11"/>
+      </geometry>
+    </collision>
+
+  </link>
+
+  <!-- Rotor frames, X configuration, ordered to match BaseAviary's mixing:
+       0 front-right, 1 rear-right, 2 rear-left, 3 front-left. -->
+
+  <link name="prop0_link">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0.174 -0.174 0"/>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+  <joint name="prop0_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="prop0_link"/>
+  </joint>
+
+  <link name="prop1_link">
+    <inertial>
+      <origin rpy="0 0 0" xyz="-0.174 -0.174 0"/>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+  <joint name="prop1_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="prop1_link"/>
+  </joint>
+
+  <link name="prop2_link">
+    <inertial>
+      <origin rpy="0 0 0" xyz="-0.174 0.174 0"/>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+  <joint name="prop2_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="prop2_link"/>
+  </joint>
+
+  <link name="prop3_link">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0.174 0.174 0"/>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+  <joint name="prop3_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="prop3_link"/>
+  </joint>
+
+  <link name="center_of_mass_link">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+  <joint name="center_of_mass_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="center_of_mass_link"/>
+  </joint>
+
+</robot>
