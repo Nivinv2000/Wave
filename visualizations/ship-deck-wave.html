@@ -1,0 +1,100 @@
+<div id="ship-wave-demo">
+  <h2>Synthetic ship-deck wave</h2>
+  <div class="viz-row wave-controls">
+    <button class="btn btn-primary" type="button" id="wave-play">Play landing</button>
+    <span class="tabular-nums" id="wave-clock" aria-live="polite">0.00 s</span>
+    <span class="text-muted" id="wave-event">Drone approaching</span>
+  </div>
+  <label class="form-label" for="wave-time">Replay time</label>
+  <input class="form-range" id="wave-time" type="range" min="0" max="8" step="0.02" value="0" aria-label="Replay time in seconds">
+  <svg id="wave-scene" viewBox="0 0 360 245" role="img" aria-label="Side view of a drone descending toward a vertically moving ship deck">
+    <title>Drone above a heaving ship deck</title>
+    <path id="sea-surface" fill="none" stroke="var(--viz-series-2)" stroke-width="1.5"></path>
+    <path id="ship-hull" fill="var(--muted)" stroke="var(--border)" stroke-width="1"></path>
+    <rect id="ship-deck" x="85" width="190" height="7" rx="2" fill="var(--viz-series-1)"></rect>
+    <line id="gap-line" x1="180" x2="180" stroke="var(--muted-foreground)" stroke-width="1" stroke-dasharray="3 3"></line>
+    <g id="drone">
+      <line x1="-29" y1="0" x2="29" y2="0" stroke="var(--foreground)" stroke-width="3"></line>
+      <circle cx="0" cy="0" r="6" fill="var(--foreground)"></circle>
+      <circle cx="-25" cy="-2" r="5" fill="var(--card)" stroke="var(--foreground)" stroke-width="1.5"></circle>
+      <circle cx="25" cy="-2" r="5" fill="var(--card)" stroke="var(--foreground)" stroke-width="1.5"></circle>
+    </g>
+    <text x="12" y="27" fill="var(--foreground)" font-size="13">Drone</text>
+    <text x="12" y="228" fill="var(--foreground)" font-size="13">Moving deck</text>
+  </svg>
+  <div class="viz-row wave-values" aria-live="polite">
+    <span>Deck height <strong class="tabular-nums" id="deck-height">+0.00 m</strong></span>
+    <span>Deck speed <strong class="tabular-nums" id="deck-speed">+0.00 m/s</strong></span>
+    <span>Drone-to-deck gap <strong class="tabular-nums" id="deck-gap">4.00 m</strong></span>
+  </div>
+  <h3>Three small waves add up to the deck motion</h3>
+  <div id="wave-chart-holder"><svg id="wave-chart" role="img" aria-label="Three sine-wave components and their combined deck-height curve over eight seconds"><title>Deck motion over time</title></svg></div>
+  <div class="viz-row wave-legend"><span><i class="legend-line total"></i> Combined deck height</span><span><i class="legend-line component"></i> Three components</span><span><i class="legend-line cursor"></i> Current time</span></div>
+</div>
+<style>
+#ship-wave-demo { max-width: 736px; color: var(--foreground); }
+#ship-wave-demo .wave-controls { margin-bottom: 6px; }
+#ship-wave-demo .wave-controls .text-muted { margin-left: auto; }
+#ship-wave-demo .form-label { display: block; margin-bottom: 2px; }
+#ship-wave-demo .form-range { width: 100%; margin-bottom: 8px; }
+#ship-wave-demo #wave-scene { display: block; width: min(100%, 480px); height: auto; margin: 0 auto 8px; }
+#ship-wave-demo .wave-values { justify-content: space-between; gap: 6px 14px; }
+#ship-wave-demo .wave-values strong { font-weight: 500; }
+#ship-wave-demo h3 { margin: 20px 0 5px; }
+#ship-wave-demo #wave-chart { display: block; width: 100%; }
+#ship-wave-demo .wave-legend { gap: 8px 18px; color: var(--muted-foreground); }
+#ship-wave-demo .legend-line { display: inline-block; vertical-align: middle; width: 19px; height: 0; border-top: 2px solid; margin-right: 5px; }
+#ship-wave-demo .legend-line.total { border-color: var(--viz-series-1); }
+#ship-wave-demo .legend-line.component { border-color: var(--viz-series-2); border-top-style: dashed; }
+#ship-wave-demo .legend-line.cursor { border-color: var(--foreground); border-top-style: dotted; }
+@media (max-width: 480px) { #ship-wave-demo .wave-controls .text-muted { margin-left: 0; } }
+</style>
+<script>
+(() => {
+  const root = document.getElementById('ship-wave-demo');
+  const q = (s) => root.querySelector(s);
+  const amplitudes = [0.22, 0.11, 0.055];
+  const omegas = [1.08, 1.83, 2.57];
+  function hashSeed(seed) { let h = 2166136261; for (const ch of String(seed)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+  let state = hashSeed(17) || 0x6d2b79f5;
+  function random() { state = (state + 0x6d2b79f5) | 0; let v = state; v = Math.imul(v ^ (v >>> 15), v | 1); v ^= v + Math.imul(v ^ (v >>> 7), v | 61); return ((v ^ (v >>> 14)) >>> 0) / 4294967296; }
+  const phases = [random(), random(), random()].map(v => v * Math.PI * 2);
+  function wave(t) { const parts = amplitudes.map((a,i) => a * Math.sin(omegas[i]*t + phases[i])); const height = parts.reduce((a,b)=>a+b,0); const speed = amplitudes.reduce((a,v,i) => a + v*omegas[i]*Math.cos(omegas[i]*t + phases[i]),0); return {parts,height,speed}; }
+  const samples = Array.from({length:401}, (_,i) => ({t:i*.02, ...wave(i*.02)}));
+  let contact = 8;
+  for (let i=1;i<samples.length;i++) { if (4-.72*samples[i].t <= samples[i].height) { const a=samples[i-1], b=samples[i]; const ga=4-.72*a.t-a.height, gb=4-.72*b.t-b.height; contact=a.t+(b.t-a.t)*ga/(ga-gb); break; } }
+  const slider=q('#wave-time'), play=q('#wave-play'), chart=q('#wave-chart'); let raf=null, start=null, from=0, time=0;
+  const fmt=(x,d=2)=>(x>=0?'+':'')+x.toFixed(d);
+  function drawChart() {
+    const w=Math.max(300, q('#wave-chart-holder').clientWidth), h=205, L=48, R=12, T=15, B=40, pw=w-L-R, ph=h-T-B;
+    const x=t=>L+t/8*pw, y=v=>T+(0.43-v)/0.86*ph;
+    const p=(fn)=>samples.map((s,i)=>(i?'L':'M')+x(s.t).toFixed(1)+','+y(fn(s)).toFixed(1)).join(' ');
+    const grid=[-0.4,-0.2,0,0.2,0.4].map(v=>`<line x1="${L}" x2="${w-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--border)" stroke-width="1"/><text x="${L-7}" y="${y(v)+4}" text-anchor="end" fill="var(--foreground)" font-size="12">${v.toFixed(1)}</text>`).join('');
+    const ticks=[0,2,4,6,8].filter((_,i)=>w>420 || i%2===0).map(v=>`<text x="${x(v)}" y="${h-17}" text-anchor="middle" fill="var(--foreground)" font-size="12">${v}</text>`).join('');
+    const components=[0,1,2].map(i=>`<path d="${p(s=>s.parts[i])}" fill="none" stroke="var(--viz-series-2)" stroke-width="1.2" stroke-dasharray="4 4" opacity="${[.7,.55,.4][i]}"/>`).join('');
+    chart.setAttribute('viewBox',`0 0 ${w} ${h}`); chart.style.height=h+'px';
+    chart.innerHTML=`<title>Deck motion over time</title><rect x="${L}" y="${T}" width="${pw}" height="${ph}" fill="none" stroke="var(--border)" stroke-width="1"/>${grid}${components}<path d="${p(s=>s.height)}" fill="none" stroke="var(--viz-series-1)" stroke-width="2.5"/><line id="wave-cursor" x1="${x(time)}" x2="${x(time)}" y1="${T}" y2="${T+ph}" stroke="var(--foreground)" stroke-width="1.5" stroke-dasharray="2 3"/><circle id="wave-dot" cx="${x(time)}" cy="${y(wave(time).height)}" r="4" fill="var(--viz-series-1)"/>${ticks}<text class="axis-title" x="${L+pw/2}" y="${h-2}" text-anchor="middle" fill="var(--foreground)" font-size="12">Time (s)</text><text class="axis-title" transform="translate(13 ${T+ph/2}) rotate(-90)" text-anchor="middle" fill="var(--foreground)" font-size="12">Height (m)</text>`;
+  }
+  function update(t) {
+    time=Math.max(0,Math.min(8,t)); slider.value=time.toFixed(2); const d=wave(time), droneH=Math.max(d.height,4-.72*time), gap=Math.max(0,droneH-d.height);
+    const deckY=205-d.height*36, droneY=205-droneH*36;
+    q('#wave-clock').textContent=time.toFixed(2)+' s';
+    q('#wave-event').textContent=time>=contact?'Hard touchdown at '+contact.toFixed(2)+' s':'Drone approaching';
+    q('#deck-height').textContent=fmt(d.height)+' m'; q('#deck-speed').textContent=fmt(d.speed)+' m/s'; q('#deck-gap').textContent=gap.toFixed(2)+' m';
+    q('#ship-deck').setAttribute('y',deckY-4);
+    q('#ship-hull').setAttribute('d',`M92 ${deckY+5} L268 ${deckY+5} L247 ${deckY+29} L112 ${deckY+29} Z`);
+    q('#drone').setAttribute('transform',`translate(180 ${droneY})`);
+    q('#gap-line').setAttribute('y1',droneY+8); q('#gap-line').setAttribute('y2',deckY-6);
+    const water=Array.from({length:46},(_,i)=>{const xx=i*8, yy=deckY+31+3*Math.sin(i*.45+time*2);return (i?'L':'M')+xx+' '+yy.toFixed(1)}).join(' ');
+    q('#sea-surface').setAttribute('d',water);
+    const w=Math.max(300,q('#wave-chart-holder').clientWidth), x=48+time/8*(w-60), cy=15+(0.43-d.height)/0.86*150;
+    const c=q('#wave-cursor'), dot=q('#wave-dot'); if(c){c.setAttribute('x1',x);c.setAttribute('x2',x);} if(dot){dot.setAttribute('cx',x);dot.setAttribute('cy',cy);}
+  }
+  function stop() { if(raf) cancelAnimationFrame(raf); raf=null; start=null; play.textContent='Play landing'; }
+  function frame(ts){ if(start===null) start=ts; const t=from+(ts-start)/1000; if(t>=Math.min(contact,8)){update(Math.min(contact,8));stop();return;} update(t);raf=requestAnimationFrame(frame); }
+  play.addEventListener('click',()=>{if(raf){stop();return;}if(time>=contact-.02)update(0);from=time;play.textContent='Pause';raf=requestAnimationFrame(frame);});
+  slider.addEventListener('input',()=>{stop();update(Number(slider.value));});
+  new ResizeObserver(()=>{drawChart();update(time);}).observe(q('#wave-chart-holder'));
+  drawChart();update(0);
+})();
+</script>

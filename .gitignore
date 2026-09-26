@@ -1,0 +1,17 @@
+.DS_Store
+**/.DS_Store
+node_modules/
+**/node_modules/
+.env
+.env.*
+!.env.example
+**/__pycache__/
+*.pyc
+.venv/
+**/.venv/
+tmp/
+*.log
+reports/
+!work/ocean-flight-lab/reports/
+!work/ocean-flight-lab/reports/weather-matrix.json
+work/ocean-flight-lab/reports/latest-batch.json

@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ocean Flight Lab</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script type="importmap">
+      { "imports": { "three": "/vendor/three.module.js" } }
+    </script>
+  </head>
+  <body>
+    <header>
+      <div class="brand">
+        <span class="brand-mark">≈</span>
+        <div>
+          <h1>Ocean Flight Lab</h1>
+          <p>Ship-deck landing · controller test environment</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <span id="run-status" class="status">READY</span
+        ><a href="/guide.md" target="_blank">Simulation guide ↗</a
+        ><button id="export" class="secondary">Export flight log</button>
+      </div>
+    </header>
+    <div class="notice">
+      Research simulator · approximate vessel response, not a calibrated digital
+      twin · physics 200 Hz / controller 20 Hz · all units SI
+    </div>
+    <main>
+      <aside class="panel environment">
+        <div class="section-title">
+          <h2>Environment</h2>
+          <span class="eyebrow">01 / SCENARIO</span>
+        </div>
+        <label for="weather">Weather preset</label
+        ><select id="weather">
+          <option value="light">Light breeze</option>
+          <option value="medium">Moderate sea</option>
+          <option value="extreme">Severe storm</option>
+          <option value="swell">Long ocean swell</option>
+          <option value="spring">Spring tide + moderate sea</option>
+          <option value="rogue">Focused large-wave event</option>
+        </select>
+        <div class="pair">
+          <div>
+            <label for="seed">Wave seed</label
+            ><input
+              id="seed"
+              type="number"
+              min="0"
+              max="4294967295"
+              value="17"
+            />
+          </div>
+          <div>
+            <label for="duration">Episode (s)</label
+            ><input id="duration" type="number" min="5" max="600" value="120" />
+          </div>
+        </div>
+        <div class="range-field">
+          <label for="hs"
+            >Significant wave height <output id="hs-val">0.35 m</output></label
+          ><input id="hs" type="range" min="0" max="8" step=".05" value=".35" />
+        </div>
+        <div class="range-field">
+          <label for="tp"
+            >Peak wave period <output id="tp-val">4.5 s</output></label
+          ><input id="tp" type="range" min="2" max="20" step=".5" value="4.5" />
+        </div>
+        <div class="pair">
+          <div>
+            <label for="wind">Wind (m/s)</label
+            ><input
+              id="wind"
+              type="number"
+              min="0"
+              max="30"
+              step=".5"
+              value="2.5"
+            />
+          </div>
+          <div>
+            <label for="gust">Gust RMS (m/s)</label
+            ><input
+              id="gust"
+              type="number"
+              min="0"
+              max="12"
+              step=".5"
+              value=".7"
+            />
+          </div>
+        </div>
+        <div class="pair">
+          <div>
+            <label for="rain">Rain (0–1)</label
+            ><input
+              id="rain"
+              type="number"
+              min="0"
+              max="1"
+              step=".1"
+              value="0"
+            />
+          </div>
+          <div>
+            <label for="visibility">Visibility (m)</label
+            ><input
+              id="visibility"
+              type="number"
+              min="10"
+              max="10000"
+              value="1500"
+            />
+          </div>
+        </div>
+        <div class="pair">
+          <div>
+            <label for="current">Current (m/s)</label
+            ><input
+              id="current"
+              type="number"
+              min="0"
+              max="3"
+              step=".1"
+              value=".15"
+            />
+          </div>
+          <div>
+            <label for="shipSpeed">Ship speed (m/s)</label
+            ><input
+              id="shipSpeed"
+              type="number"
+              min="0"
+              max="5"
+              step=".1"
+              value=".5"
+            />
+          </div>
+        </div>
+        <div class="pair">
+          <div>
+            <label for="tideAmplitude">Tide amplitude (m)</label
+            ><input
+              id="tideAmplitude"
+              type="number"
+              min="0"
+              max="4"
+              step=".1"
+              value=".4"
+            />
+          </div>
+          <div>
+            <label for="tidePhase">Tide phase</label
+            ><select id="tidePhase">
+              <option value="0">Rising mid-tide</option>
+              <option value="1.5707963267948966">High tide</option>
+              <option value="3.141592653589793">Falling mid-tide</option>
+              <option value="4.71238898038469">Low tide</option>
+            </select>
+          </div>
+        </div>
+        <p class="hint">
+          Full/new moons increase tidal range over hours. Storm waves and the
+          large-wave event are separate phenomena.
+        </p>
+        <details>
+          <summary>Airframe & sensors</summary>
+          <div class="pair">
+            <div>
+              <label for="droneMass">Mass (kg)</label
+              ><input
+                id="droneMass"
+                type="number"
+                min="1"
+                max="10"
+                step=".5"
+                value="3"
+              />
+            </div>
+            <div>
+              <label for="initialHeight">Start height (m)</label
+              ><input
+                id="initialHeight"
+                type="number"
+                min="2"
+                max="30"
+                value="7"
+              />
+            </div>
+          </div>
+          <label for="noise">Sensor noise multiplier</label
+          ><input
+            id="noise"
+            type="number"
+            min="0"
+            max="5"
+            step=".25"
+            value="1"
+          /><label for="trackerSource">Deck tracking source</label
+          ><select id="trackerSource">
+            <option value="vision">Optical tracker (weather affected)</option>
+            <option value="radio">Local radio beacon</option></select
+          ><label class="check"
+            ><input id="gpsEnabled" type="checkbox" checked /> GPS
+            enabled</label
+          ><label class="check"
+            ><input id="trackerEnabled" type="checkbox" checked /> Deck tracking
+            enabled</label
+          >
+        </details>
+        <button id="apply" class="primary full">Apply & reset scenario</button>
+        <p class="hint" id="config-message">
+          Changing settings takes effect on reset.
+        </p>
+      </aside>
+      <section class="stage-column">
+        <div class="viewport" id="viewport">
+          <div class="scene-top">
+            <div>
+              <span class="eyebrow">SIMULATED WORLD / Z UP</span>
+              <h2 id="scene-title">Light breeze</h2>
+            </div>
+            <div class="camera-controls">
+              <button data-camera="follow" class="selected">Follow</button
+              ><button data-camera="drone">Drone</button
+              ><button data-camera="orbit">Orbit</button
+              ><button data-camera="top">Top</button>
+            </div>
+          </div>
+          <div id="webgl-error" hidden></div>
+          <span id="drone-tag">DRONE</span>
+          <div class="scene-bottom">
+            <span class="scene-key"
+              ><i class="cyan"></i> Drone path <i class="amber"></i> Landing
+              pad</span
+            ><span id="weather-summary">Hs 0.35 m · wind 2.5 m/s</span>
+          </div>
+        </div>
+        <div class="transport">
+          <button id="play" class="primary">▶ Run simulation</button
+          ><button id="step" class="secondary">Step 0.05 s</button
+          ><button id="reset" class="secondary">Reset</button
+          ><label class="speed-label" for="speed"
+            >Speed
+            <select id="speed">
+              <option value=".5">0.5×</option>
+              <option value="1" selected>1×</option>
+              <option value="2">2×</option>
+              <option value="4">4×</option>
+            </select></label
+          ><span class="time"
+            ><strong id="time">0.00</strong> /
+            <span id="duration-label">120</span> s</span
+          >
+        </div>
+        <div class="metrics">
+          <div>
+            <span>Pad clearance</span><strong id="metric-gap">—</strong>
+          </div>
+          <div>
+            <span>Relative vertical speed</span
+            ><strong id="metric-relative">—</strong>
+          </div>
+          <div>
+            <span>Deck roll / pitch</span><strong id="metric-tilt">—</strong>
+          </div>
+          <div>
+            <span>Pad offset</span><strong id="metric-offset">—</strong>
+          </div>
+        </div>
+        <div class="panel telemetry">
+          <div class="section-title">
+            <h2>Flight telemetry</h2>
+            <span class="legend"
+              ><i class="cyan"></i> Drone altitude <i class="amber"></i> Deck
+              altitude <i class="purple"></i> Estimated altitude</span
+            >
+          </div>
+          <canvas
+            id="telemetry-chart"
+            aria-label="Aircraft, deck and estimated altitude over simulation time"
+          ></canvas>
+          <div class="telemetry-footer">
+            <span>Absolute height (m) · simulation time (s)</span
+            ><span id="flight-count">1 frame recorded</span>
+          </div>
+        </div>
+        <div class="panel result" id="result" hidden>
+          <h2 id="result-title"></h2>
+          <p id="result-detail"></p>
+          <button id="download-result" class="secondary">
+            Download evidence
+          </button>
+        </div>
+        <div class="panel event-panel">
+          <div class="section-title">
+            <h2>Execution log</h2>
+            <span class="eyebrow">CURRENT EPISODE</span>
+          </div>
+          <ol id="events"></ol>
+        </div>
+      </section>
+      <aside class="panel controller">
+        <div class="section-title">
+          <h2>Controller</h2>
+          <span class="eyebrow">02 / MODEL</span>
+        </div>
+        <label for="controller">Active model</label
+        ><select id="controller">
+          <option value="predictive">Built-in · predictive landing</option>
+          <option value="reactive">Built-in · reactive landing</option>
+          <option value="hover">Built-in · follow & hover</option>
+          <option value="custom">Upload JavaScript controller</option>
+          <option value="python">Python / HTTP model</option>
+        </select>
+        <div id="custom-panel" hidden>
+          <label for="model-file">Controller module (.mjs / .js)</label
+          ><input id="model-file" type="file" accept=".js,.mjs" /><label
+            for="model-options"
+            >Model options (JSON)</label
+          ><textarea id="model-options" rows="3">{"descentSpeed":0.28}</textarea
+          ><a href="/example-controller.mjs" download="follow-and-land.mjs"
+            >Download example controller</a
+          >
+        </div>
+        <div id="python-panel" hidden>
+          <p class="hint">
+            Run <code>python3 examples/python_controller.py</code>. Replace its
+            policy function with your model. Endpoint: localhost:8765.
+          </p>
+        </div>
+        <p id="model-description" class="hint">
+          Uses delayed deck measurements to forecast short-term vertical motion.
+          Deterministic local code; no cloud service.
+        </p>
+        <button id="attach" class="secondary full">
+          Attach model & reset flight
+        </button>
+        <div id="model-state" role="status">Built-in controller ready</div>
+        <div class="divider"></div>
+        <div class="section-title">
+          <h2>Live decision</h2>
+          <span id="inference-ms">— ms</span>
+        </div>
+        <p id="decision">Awaiting first control tick</p>
+        <pre id="command">No command yet</pre>
+        <div class="section-title">
+          <h2>Sensor stream</h2>
+          <span class="eyebrow">MEASURED</span>
+        </div>
+        <table class="sensor-table">
+          <thead>
+            <tr>
+              <th>Sensor</th>
+              <th>Rate</th>
+              <th>Age</th>
+            </tr>
+          </thead>
+          <tbody id="sensors"></tbody>
+        </table>
+        <div class="estimate-error">
+          Position estimate error <strong id="estimate-error">—</strong>
+        </div>
+        <div class="section-title">
+          <h2>Motor thrust</h2>
+          <span id="battery">100% battery</span>
+        </div>
+        <div id="motors"></div>
+        <p class="hint">
+          X quadrotor · motor lag 55 ms · thrust + gravity + drag · fixed
+          numerical integration.
+        </p>
+        <a class="docs-link" href="/guide.md" target="_blank"
+          >Model contract, parameters & fidelity →</a
+        >
+      </aside>
+    </main>
+    <script type="module" src="/app.mjs"></script>
+  </body>
+</html>
